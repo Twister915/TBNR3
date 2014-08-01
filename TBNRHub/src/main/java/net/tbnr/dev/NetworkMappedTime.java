@@ -23,8 +23,8 @@ public final class NetworkMappedTime implements CPlayerConnectionListener {
     private static void synchronizeTimeWithLocalTime(CPlayer player) {
         DateTime dateTime = new DateTime(getPlayerTimezone(player));
         int secondOfDay = dateTime.getSecondOfDay();
-        float partsOfDay = (float) secondOfDay / (float) SECONDS_IN_DAY;
-        long ticksOfDay = (long) (TICKS_IN_DAY * partsOfDay);
+        long partsOfDay = (long) secondOfDay / SECONDS_IN_DAY;
+        long ticksOfDay = TICKS_IN_DAY * partsOfDay;
         ticksOfDay = (ticksOfDay + OFFSET) % TICKS_IN_DAY;
         player.getBukkitPlayer().setPlayerTime(ticksOfDay, false);
     }
