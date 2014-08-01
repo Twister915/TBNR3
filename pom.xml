@@ -12,6 +12,11 @@
     <artifactId>TBNR3</artifactId>
 
     <packaging>pom</packaging>
+    <modules>
+        <module>TBNRHub</module>
+        <module>TBNRSG</module>
+        <module>TBNRNetwork</module>
+    </modules>
 
 
 </project>
