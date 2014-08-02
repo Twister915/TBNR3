@@ -21,17 +21,24 @@ public final class NetworkMappedTime implements CPlayerConnectionListener {
     private static Map<CPlayer, DateTimeZone> playerTimezones = new WeakHashMap<>();
 
     private static void synchronizeTimeWithLocalTime(CPlayer player) {
-        DateTime dateTime = new DateTime(getPlayerTimezone(player));
+        DateTimeZone playerTimezone = getPlayerTimezone(player);
+        if (playerTimezone == null) return;
+        DateTime dateTime = new DateTime(playerTimezone);
         int secondOfDay = dateTime.getSecondOfDay();
-        long partsOfDay = (long) secondOfDay / SECONDS_IN_DAY;
-        long ticksOfDay = TICKS_IN_DAY * partsOfDay;
+        float partsOfDay = (float) secondOfDay / (float) SECONDS_IN_DAY;
+        long ticksOfDay = (long) (TICKS_IN_DAY * partsOfDay);
         ticksOfDay = (ticksOfDay + OFFSET) % TICKS_IN_DAY;
         player.getBukkitPlayer().setPlayerTime(ticksOfDay, false);
     }
 
     private static DateTimeZone getPlayerTimezone(CPlayer player) {
         if (playerTimezones.containsKey(player)) return playerTimezones.get(player);
-        TimeZone timeZone = TimeZone.getTimeZone(player.getGeoIPInfo().getResponse().getLocation().getTimeZone());
+        TimeZone timeZone;
+        try {
+            timeZone = TimeZone.getTimeZone(player.getGeoIPInfo().getResponse().getLocation().getTimeZone());
+        } catch (NullPointerException e) {
+            return null;
+        }
         DateTimeZone dateTimeZone = DateTimeZone.forTimeZone(timeZone);
         playerTimezones.put(player, dateTimeZone);
         return dateTimeZone;
@@ -50,7 +57,7 @@ public final class NetworkMappedTime implements CPlayerConnectionListener {
                     }
                 }
             }
-        }, 5L, 5L);
+        }, 100L, 100L);
         Core.getPlayerManager().registerCPlayerConnectionListener(new NetworkMappedTime());
     }
 

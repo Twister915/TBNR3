@@ -1,0 +1,6 @@
+name: TBNRHub
+version: 1.0
+authors: [Twister915]
+main: net.tbnr.dev.TBNRHub
+description: TBNR's Hub Plugin
+depend: [Core, CoreHub]
