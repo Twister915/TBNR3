@@ -1,6 +1,8 @@
 package net.tbnr.dev;
 
 import net.cogzmc.core.Core;
+import net.cogzmc.core.player.CPlayer;
+import net.tbnr.dev.inventory.HubInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -16,7 +18,11 @@ public final class PlayerGate implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        TBNRHub.getInstance().getPlayerInventory().setActive(Core.getOnlinePlayer(event.getPlayer()));
+        event.getPlayer().getInventory().clear();
+        CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
+        TBNRHub instance = TBNRHub.getInstance();
+        HubInventory inventory = onlinePlayer.hasPermission("hub.inventory.donor") ? instance.getDonorInventory() : instance.getPlayerInventory();
+        inventory.setActive(onlinePlayer);
         //TODO setup scoreboard
     }
 }

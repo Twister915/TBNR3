@@ -13,16 +13,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Arrays;
 import java.util.List;
 
-public final class PlayerInventory extends HubInventory implements Listener {
+public class PlayerInventory extends HubInventory implements Listener {
     public PlayerInventory() {
         Bukkit.getPluginManager().registerEvents(this, TBNRHub.getInstance());
     }
@@ -31,6 +29,7 @@ public final class PlayerInventory extends HubInventory implements Listener {
 
     @EventHandler
     public void onSettingChange(SettingChangeEvent event) {
+        if (!getPlayers().contains(event.getPlayer())) return;
         updateForPlayer(event.getPlayer());
     }
 
@@ -50,7 +49,10 @@ public final class PlayerInventory extends HubInventory implements Listener {
 
                     @Override
                     protected void onUse(CPlayer player) {
-                        warpStarMenu.open(player);
+                        try {
+                            warpStarMenu.open(player);
+                        } catch (IllegalStateException ignored) {
+                        }
                     }
                 };
             case 2:

@@ -22,7 +22,7 @@ public final class DisableChatListener implements Listener {
         if (!settingsManager.getStateFor(PlayerSetting.CHAT, onlinePlayer)) {
             event.setCancelled(true);
             onlinePlayer.playSoundForPlayer(Sound.NOTE_PIANO, 1f, 0.75f);
-            onlinePlayer.sendMessage();
+            onlinePlayer.sendMessage(TBNRHub.getInstance().getFormat("chat-off"));
             return;
         }
         Set<CPlayer> onlinePlayersWithSetting = settingsManager.getOnlinePlayersWithSetting(PlayerSetting.CHAT, false);

@@ -6,8 +6,6 @@ import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.core.player.CPlayerConnectionListener;
 import net.cogzmc.core.player.CPlayerJoinException;
 import net.cogzmc.core.player.CooldownUnexpiredException;
-import net.cogzmc.punishments.Punishments;
-import net.cogzmc.punishments.types.impl.model.Kick;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
@@ -94,6 +92,7 @@ public abstract class HubInventory implements Listener, CPlayerConnectionListene
     public final void onPlayerInventoryMove(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) return;
         CPlayer onlinePlayer = Core.getOnlinePlayer((Player) event.getWhoClicked());
+        if (!players.contains(onlinePlayer)) return;
         if (buttons.keySet().contains(event.getSlot())
                 && players.contains(onlinePlayer)) {
             event.setCancelled(true);
@@ -109,7 +108,8 @@ public abstract class HubInventory implements Listener, CPlayerConnectionListene
         HubInventoryButton hubInventoryButton = buttons.get(event.getPlayer().getInventory().getHeldItemSlot());
         if (hubInventoryButton == null) return;
         CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
-        try {
+        if (!players.contains(onlinePlayer)) return;
+            try {
             onlinePlayer.getCooldownManager().testCooldown((hubInventoryButton.hashCode() + "_inv"), 1L, TimeUnit.SECONDS);
         } catch (CooldownUnexpiredException e) {
             if (e.getTimeRemaining() > 800)
@@ -125,12 +125,14 @@ public abstract class HubInventory implements Listener, CPlayerConnectionListene
 
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerDrop(PlayerDropItemEvent event) {
+        CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
+        if (!players.contains(onlinePlayer)) return;
         if (buttons.get(event.getPlayer().getInventory().getHeldItemSlot()) != null) {
             event.setCancelled(false);
             event.getItemDrop().remove();
-            updateForPlayer(Core.getOnlinePlayer(event.getPlayer()));
+            updateForPlayer(onlinePlayer);
             try {
-                Core.getOnlinePlayer(event.getPlayer()).getCooldownManager().testCooldown(hashCode() + "_inv_drop", 500L, TimeUnit.MILLISECONDS, false);
+                onlinePlayer.getCooldownManager().testCooldown(hashCode() + "_inv_drop", 500L, TimeUnit.MILLISECONDS, false);
             } catch (CooldownUnexpiredException e) {
                 event.getPlayer().kickPlayer(ChatColor.RED + "Spamming inventory drops (more than 1 per second)");
             }

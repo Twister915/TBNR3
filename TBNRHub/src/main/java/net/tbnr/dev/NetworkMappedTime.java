@@ -18,7 +18,7 @@ public final class NetworkMappedTime implements CPlayerConnectionListener {
     private final static long SECONDS_IN_DAY = 86400;
     private final static long OFFSET = 18000;
 
-    private static Map<CPlayer, DateTimeZone> playerTimezones = new WeakHashMap<>();
+    private static volatile Map<CPlayer, DateTimeZone> playerTimezones = new WeakHashMap<>();
 
     private static void synchronizeTimeWithLocalTime(CPlayer player) {
         DateTimeZone playerTimezone = getPlayerTimezone(player);
@@ -49,6 +49,7 @@ public final class NetworkMappedTime implements CPlayerConnectionListener {
             @Override
             public void run() {
                 for (CPlayer cPlayer : Core.getPlayerManager()) {
+                    if (!playerTimezones.containsKey(cPlayer)) continue;
                     try {
                         synchronizeTimeWithLocalTime(cPlayer);
                     } catch (Exception e) {
@@ -57,15 +58,26 @@ public final class NetworkMappedTime implements CPlayerConnectionListener {
                     }
                 }
             }
-        }, 100L, 100L);
+        }, 3000L, 3000L);
         Core.getPlayerManager().registerCPlayerConnectionListener(new NetworkMappedTime());
     }
 
     private NetworkMappedTime() {}
 
     @Override
-    public void onPlayerLogin(CPlayer player, InetAddress address) throws CPlayerJoinException {
-        synchronizeTimeWithLocalTime(player);
+    public void onPlayerLogin(final CPlayer player, InetAddress address) throws CPlayerJoinException {
+        Bukkit.getScheduler().runTaskAsynchronously(TBNRHub.getInstance(), new Runnable() {
+            @Override
+            public void run() {
+                getPlayerTimezone(player);
+                Bukkit.getScheduler().runTaskLater(TBNRHub.getInstance(), new Runnable() {
+                    @Override
+                    public void run() {
+                        synchronizeTimeWithLocalTime(player);
+                    }
+                }, 1L);
+            }
+        });
     }
 
     @Override

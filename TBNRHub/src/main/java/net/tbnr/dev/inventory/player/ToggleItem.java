@@ -24,7 +24,7 @@ import java.util.List;
 @Data
 @Getter(AccessLevel.NONE)
 public abstract class ToggleItem extends HubInventoryButton {
-    private final PlayerSetting setting;
+    protected final PlayerSetting setting;
 
     public abstract String getName();
     public abstract List<String> getDescription();
@@ -44,8 +44,15 @@ public abstract class ToggleItem extends HubInventoryButton {
         return itemStack;
     }
 
+    protected boolean canUse(CPlayer player) {return true;}
+
     @Override
     protected final void onUse(CPlayer player) {
+        if (!canUse(player)) {
+            player.playSoundForPlayer(Sound.NOTE_PIANO, 1f, 0.75f);
+            player.sendMessage(TBNRHub.getInstance().getFormat("cannot-use-toggle"));
+            return;
+        }
         PlayerSettingsManager settingsManager = TBNRHub.getInstance().getSettingsManager();
         settingsManager.toggleStateFor(setting, player);
         boolean stateFor = settingsManager.getStateFor(setting, player);
