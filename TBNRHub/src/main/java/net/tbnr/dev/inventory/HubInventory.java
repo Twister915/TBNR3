@@ -96,8 +96,6 @@ public abstract class HubInventory implements Listener, CPlayerConnectionListene
         if (buttons.keySet().contains(event.getSlot())
                 && players.contains(onlinePlayer)) {
             event.setCancelled(true);
-            if (event.getSlotType() == InventoryType.SlotType.QUICKBAR) return;
-            buttons.get(event.getSlot()).onUse(onlinePlayer);
         }
     }
 

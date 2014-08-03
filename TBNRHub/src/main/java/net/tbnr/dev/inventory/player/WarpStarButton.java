@@ -1,4 +1,4 @@
-package net.tbnr.dev.inventory.warp;
+package net.tbnr.dev.inventory.player;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

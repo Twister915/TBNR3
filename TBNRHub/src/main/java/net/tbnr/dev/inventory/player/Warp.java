@@ -1,4 +1,4 @@
-package net.tbnr.dev.inventory.warp;
+package net.tbnr.dev.inventory.player;
 
 import lombok.Value;
 import net.cogzmc.core.util.Point;

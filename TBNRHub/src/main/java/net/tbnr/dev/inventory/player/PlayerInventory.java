@@ -1,6 +1,5 @@
 package net.tbnr.dev.inventory.player;
 
-import net.cogzmc.core.Core;
 import net.cogzmc.core.gui.InventoryGraphicalInterface;
 import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.hub.Hub;
@@ -17,15 +16,23 @@ import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.Arrays;
-import java.util.List;
+public final class PlayerInventory extends HubInventory implements Listener {
+    private final static PlayerSetting[] perks = new PlayerSetting[]{PlayerSetting.JUMP_BOOST, PlayerSetting.RAINBOW_PARTICLE_EFFECT, PlayerSetting.FLY_IN_HUB};
 
-public class PlayerInventory extends HubInventory implements Listener {
     public PlayerInventory() {
         Bukkit.getPluginManager().registerEvents(this, TBNRHub.getInstance());
     }
 
     private final InventoryGraphicalInterface warpStarMenu = new InventoryGraphicalInterface(9, ChatColor.GREEN + "TBNR");
+
+    private InventoryGraphicalInterface getPerkMenuFor(CPlayer player) {
+        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.GOLD + ChatColor.BOLD.toString() + "Perk Menu.");
+        for (PlayerSetting perk : perks) {
+            graphicalInterface.addButton(new PerkButton(perk, player, graphicalInterface));
+        }
+        graphicalInterface.updateInventory();
+        return graphicalInterface;
+    }
 
     @EventHandler
     public void onSettingChange(SettingChangeEvent event) {
@@ -57,41 +64,26 @@ public class PlayerInventory extends HubInventory implements Listener {
                 };
             case 2:
                 //Hide players
-                return new ToggleItem(PlayerSetting.PLAYERS) {
-                    @Override
-                    public String getName() {
-                        return "Players";
-                    }
-
-                    @Override
-                    public List<String> getDescription() {
-                        return Arrays.asList("Hides players (when off) from your view.", "Does not hide staff members.");
-                    }
-                };
+                return new ToggleItem(PlayerSetting.PLAYERS);
             case 4:
                 //Toggle snowball game
-                return new ToggleItem(PlayerSetting.SNOWBALL_GAME) {
-                    @Override
-                    public String getName() {
-                        return "Snowball Mini-Game";
-                    }
-
-                    @Override
-                    public List<String> getDescription() {
-                        return Arrays.asList("Disables you from being hit", "or throwing snowballs");
-                    }
-                };
+                return new ToggleItem(PlayerSetting.SNOWBALL_GAME);
             case 6:
                 //Toggle chat
-                return new ToggleItem(PlayerSetting.CHAT) {
+                return new HubInventoryButton() {
                     @Override
-                    public String getName() {
-                        return "Chat";
+                    protected ItemStack getStack(CPlayer player) {
+                        ItemStack stack = new ItemStack(Material.INK_SACK);
+                        stack.setDurability((short) 14);
+                        ItemMeta itemMeta = stack.getItemMeta();
+                        itemMeta.setDisplayName(ChatColor.GOLD + "Perk Menu");
+                        stack.setItemMeta(itemMeta);
+                        return stack;
                     }
 
                     @Override
-                    public List<String> getDescription() {
-                        return Arrays.asList("Mutes the chat when off.", "You will not see any chat messages", "nor can you send any.");
+                    protected void onUse(CPlayer player) {
+                        getPerkMenuFor(player).open(player);
                     }
                 };
             case 8:

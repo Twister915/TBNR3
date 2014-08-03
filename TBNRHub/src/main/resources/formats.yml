@@ -1,3 +1,5 @@
 prefix: "&a&l>> "
 chat-off: "&cYou cannot chat, as you currently have your chat off."
 cannot-use-toggle: "&cYou cannot toggle this setting."
+parkour-level-complete: "&aYou have completed level &e<level>&a."
+parkour-level-start: "&aYou have started level &e<level>&a."

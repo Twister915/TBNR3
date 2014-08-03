@@ -20,9 +20,7 @@ public final class PlayerGate implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         event.getPlayer().getInventory().clear();
         CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
-        TBNRHub instance = TBNRHub.getInstance();
-        HubInventory inventory = onlinePlayer.hasPermission("hub.inventory.donor") ? instance.getDonorInventory() : instance.getPlayerInventory();
-        inventory.setActive(onlinePlayer);
+        TBNRHub.getInstance().getPlayerInventory().setActive(onlinePlayer);
         //TODO setup scoreboard
     }
 }
