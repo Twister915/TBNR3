@@ -8,6 +8,7 @@ import net.tbnr.dev.commands.ClearChatCommand;
 import net.tbnr.dev.effects.AntiLeafDecay;
 import net.tbnr.dev.effects.BelowZero;
 import net.tbnr.dev.effects.BouncyPads;
+import net.tbnr.dev.effects.PlayerGate;
 import net.tbnr.dev.inventory.player.PlayerInventory;
 import net.tbnr.dev.parkour.ParkourCommand;
 import net.tbnr.dev.parkour.ParkourManager;
@@ -32,7 +33,6 @@ public final class TBNRHub extends ModularPlugin {
         registerAllCommands();
         registerAllListeners();
         HidePlayerListener.enable();
-        PlayerGate.enable();
         SnowballMinigame.enable();
     }
 
@@ -50,5 +50,6 @@ public final class TBNRHub extends ModularPlugin {
         new BouncyPads().enable();
         new BelowZero().enable();
         new AntiLeafDecay().enable();
+        new PlayerGate().enable();
     }
 }
