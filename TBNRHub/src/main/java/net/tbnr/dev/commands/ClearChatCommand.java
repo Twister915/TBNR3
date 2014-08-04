@@ -31,6 +31,6 @@ public final class ClearChatCommand extends ModuleCommand {
             player.clearChatAll();
             player.playSoundForPlayer(Sound.FIZZ, 0.5F);
         }
-        sender.sendMessage(TBNRHub.getInstance().getFormat("formats.clear-chat"));
+        sender.sendMessage(TBNRHub.getInstance().getFormat("clear-chat"));
     }
 }

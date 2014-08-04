@@ -11,11 +11,12 @@ import org.bukkit.event.player.PlayerJoinEvent;
 /**
  * I called it a gate because everyone passes through it.
  */
-public final class PlayerGate extends ModuleListener {
+public final class PlayerGate implements Listener {
 
-    public PlayerGate() {
-        super("player-gate");
+    public static void enable() {
+        TBNRHub.getInstance().getServer().getPluginManager().registerEvents(new PlayerGate(), TBNRHub.getInstance());
     }
+
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {

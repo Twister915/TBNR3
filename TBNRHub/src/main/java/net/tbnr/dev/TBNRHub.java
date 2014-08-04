@@ -6,7 +6,6 @@ import net.cogzmc.core.modular.ModularPlugin;
 import net.cogzmc.core.modular.ModuleMeta;
 import net.tbnr.dev.commands.ClearChatCommand;
 import net.tbnr.dev.effects.AntiLeafDecay;
-import net.tbnr.dev.effects.BelowZero;
 import net.tbnr.dev.effects.BouncyPads;
 import net.tbnr.dev.effects.PlayerGate;
 import net.tbnr.dev.inventory.player.PlayerInventory;
@@ -48,8 +47,7 @@ public final class TBNRHub extends ModularPlugin {
 
     private void registerAllListeners() {
         new BouncyPads().enable();
-        new BelowZero().enable();
         new AntiLeafDecay().enable();
-        new PlayerGate().enable();
+        PlayerGate.enable();
     }
 }
