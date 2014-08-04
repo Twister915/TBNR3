@@ -8,4 +8,9 @@ public final class ParkourCommand extends ModuleCommand {
     public ParkourCommand() {
         super("parkour", new ParkourLeaveCommand(), new ParkourSetupCommand());
     }
+
+    @Override
+    protected boolean isUsingSubCommandsOnly() {
+        return true;
+    }
 }
