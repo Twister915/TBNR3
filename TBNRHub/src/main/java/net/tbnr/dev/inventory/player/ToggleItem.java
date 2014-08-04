@@ -10,6 +10,7 @@ import net.tbnr.dev.inventory.HubInventoryButton;
 import net.tbnr.dev.inventory.SettingUtils;
 import net.tbnr.dev.setting.PlayerSetting;
 import net.tbnr.dev.setting.PlayerSettingsManager;
+import net.tbnr.dev.setting.SettingChangeException;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -45,7 +46,12 @@ public class ToggleItem extends HubInventoryButton {
             return;
         }
         PlayerSettingsManager settingsManager = TBNRHub.getInstance().getSettingsManager();
-        settingsManager.toggleStateFor(setting, player);
+        try {
+            settingsManager.toggleStateFor(setting, player);
+        } catch (SettingChangeException e) {
+            SettingUtils.onSettingDeny(player);
+            return;
+        }
         SettingUtils.onSettingToggle(player, setting);
     }
 }

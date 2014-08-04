@@ -9,9 +9,9 @@ import net.tbnr.dev.TBNRHub;
 import net.tbnr.dev.inventory.SettingUtils;
 import net.tbnr.dev.setting.PlayerSetting;
 import net.tbnr.dev.setting.PlayerSettingsManager;
+import net.tbnr.dev.setting.SettingChangeException;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -50,7 +50,12 @@ public final class PerkButton extends InventoryButton {
             return;
         }
         PlayerSettingsManager settingsManager = TBNRHub.getInstance().getSettingsManager();
-        settingsManager.toggleStateFor(setting, player);
+        try {
+            settingsManager.toggleStateFor(setting, player);
+        } catch (SettingChangeException e) {
+            SettingUtils.onSettingDeny(player);
+            return;
+        }
         setStack(getStackFor(setting, player));
         inventory.markForUpdate(this);
         inventory.updateInventory();

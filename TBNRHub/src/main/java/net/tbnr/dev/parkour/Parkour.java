@@ -14,6 +14,7 @@ public final class Parkour implements Iterable<ParkourLevel> {
     private final Region startRegion;
     private final Region endRegion;
     private final Point spawnPoint;
+    private final Point villagerPoint;
     private final World world;
     private final List<ParkourLevel> levels = new ArrayList<>();
 

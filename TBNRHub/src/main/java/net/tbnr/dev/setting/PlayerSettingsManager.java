@@ -13,6 +13,7 @@ import java.util.*;
 
 public final class PlayerSettingsManager implements CPlayerConnectionListener, Listener {
     private final Map<CPlayer, Map<PlayerSetting, Boolean>> playerSettings = new WeakHashMap<>();
+    private final Map<CPlayer, Set<PlayerSetting>> lockedSettings = new WeakHashMap<>();
 
     public PlayerSettingsManager() {
         Core.getPlayerManager().registerCPlayerConnectionListener(this);
@@ -25,13 +26,15 @@ public final class PlayerSettingsManager implements CPlayerConnectionListener, L
         return playerSettingBooleanMap.get(setting);
     }
 
-    public void toggleStateFor(PlayerSetting setting, CPlayer player) {
+    public void toggleStateFor(PlayerSetting setting, CPlayer player) throws SettingChangeException {
+        if (getLockedSettings(player).contains(setting)) throw new SettingChangeException();
         boolean b = !getStateFor(setting, player);
         playerSettings.get(player).put(setting, b);
         fireObservers(player, setting, b);
     }
 
-    public void setStateFor(PlayerSetting setting, CPlayer player, Boolean value) {
+    public void setStateFor(PlayerSetting setting, CPlayer player, Boolean value) throws SettingChangeException {
+        if (getLockedSettings(player).contains(setting)) throw new SettingChangeException();
         playerSettings.get(player).put(setting, value);
         fireObservers(player, setting, value);
     }
@@ -42,6 +45,20 @@ public final class PlayerSettingsManager implements CPlayerConnectionListener, L
             if (getStateFor(setting, cPlayer).equals(value)) players.add(cPlayer);
         }
         return players;
+    }
+
+    public void lockSetting(PlayerSetting setting, CPlayer player) {
+        getLockedSettings(player).add(setting);
+    }
+
+    public void unlockSetting(PlayerSetting setting, CPlayer player) {
+        getLockedSettings(player).remove(setting);
+    }
+
+    private Set<PlayerSetting> getLockedSettings(CPlayer player) {
+        if (lockedSettings.containsKey(player)) return lockedSettings.get(player);
+        lockedSettings.put(player, new HashSet<PlayerSetting>());
+        return getLockedSettings(player);
     }
 
     @Override
@@ -64,6 +81,7 @@ public final class PlayerSettingsManager implements CPlayerConnectionListener, L
             else player.removeSettingValue(setting.getKey().settingKey);
         }
         playerSettings.remove(player);
+        lockedSettings.remove(player);
     }
 
     private void fireObservers(CPlayer player, PlayerSetting setting, Boolean value) {

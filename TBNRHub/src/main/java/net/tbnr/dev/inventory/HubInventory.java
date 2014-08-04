@@ -99,7 +99,7 @@ public abstract class HubInventory implements Listener, CPlayerConnectionListene
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH)
     public final void onInteract(PlayerInteractEvent event) {
         if (event.getPlayer().getGameMode() == GameMode.CREATIVE) return;
         if (event.getAction() == Action.PHYSICAL) return;
