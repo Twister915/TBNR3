@@ -4,6 +4,10 @@ import lombok.Getter;
 import net.cogzmc.core.Core;
 import net.cogzmc.core.modular.ModularPlugin;
 import net.cogzmc.core.modular.ModuleMeta;
+import net.tbnr.dev.commands.ClearChatCommand;
+import net.tbnr.dev.effects.AntiLeafDecay;
+import net.tbnr.dev.effects.BelowZero;
+import net.tbnr.dev.effects.BouncyPads;
 import net.tbnr.dev.inventory.player.PlayerInventory;
 import net.tbnr.dev.parkour.ParkourCommand;
 import net.tbnr.dev.parkour.ParkourManager;
@@ -24,8 +28,9 @@ public final class TBNRHub extends ModularPlugin {
         if (Core.getPlayerManager().getGeoIPManager() != null) NetworkMappedTime.enable();
         settingsManager = new PlayerSettingsManager();
         parkourManager = new ParkourManager();
-        registerCommand(new ParkourCommand());
         playerInventory = new PlayerInventory();
+        registerAllCommands();
+        registerAllListeners();
         HidePlayerListener.enable();
         PlayerGate.enable();
         SnowballMinigame.enable();
@@ -34,5 +39,16 @@ public final class TBNRHub extends ModularPlugin {
     @Override
     protected void onModuleDisable() throws Exception {
         parkourManager.save();
+    }
+
+    private void registerAllCommands() {
+        registerCommand(new ClearChatCommand());
+        registerCommand(new ParkourCommand());
+    }
+
+    private void registerAllListeners() {
+        new BouncyPads().enable();
+        new BelowZero().enable();
+        new AntiLeafDecay().enable();
     }
 }

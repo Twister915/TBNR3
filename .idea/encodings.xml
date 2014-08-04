@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false">
+    <file url="file://$PROJECT_DIR$/../Core/Core" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../Core/CoreChat" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../Core/CoreEntities" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../Core/CoreEssentials" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../Core/CoreGames" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../Core/CoreHub" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../Core/CorePermissions" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../Core/CorePunishments" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../Core/CoreServerlet" charset="UTF-8" />
+  </component>
+</project>
+
