@@ -32,8 +32,6 @@ public final class TBNRHub extends ModularPlugin {
         playerInventory = new PlayerInventory();
         registerAllCommands();
         registerAllListeners();
-        HidePlayerListener.enable();
-        SnowballMinigame.enable();
     }
 
     @Override
@@ -51,5 +49,7 @@ public final class TBNRHub extends ModularPlugin {
         new AntiLeafDecay().enable();
         PlayerGate.enable();
         HeightTracker.enable();
+        HidePlayerListener.enable();
+        SnowballMinigame.enable();
     }
 }
