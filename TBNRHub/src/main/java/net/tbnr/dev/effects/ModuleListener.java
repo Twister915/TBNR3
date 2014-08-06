@@ -1,5 +1,6 @@
 package net.tbnr.dev.effects;
 
+import net.cogzmc.core.Core;
 import net.tbnr.dev.TBNRHub;
 import org.bukkit.event.Listener;
 
@@ -20,7 +21,9 @@ public abstract class ModuleListener implements Listener {
     }
 
     public final boolean enable() {
+        Core.logDebug("Enabling listener " + getClass().getSimpleName());
         if (!TBNRHub.getInstance().getConfig().getBoolean("listeners-enable." + configString)) return false;
+        Core.logDebug("Enabled listener " + getClass().getSimpleName());
         TBNRHub.getInstance().registerListener(this);
         return true;
     }

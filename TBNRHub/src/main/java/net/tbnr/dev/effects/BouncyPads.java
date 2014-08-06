@@ -34,7 +34,7 @@ public final class BouncyPads extends ModuleListener {
         if (!(event.getAction() == Action.PHYSICAL)) return;
         if (!(block.getType().equals(Material.STONE_PLATE) || block.getType().equals(Material.WOOD_PLATE))) return;
         if (!block.getRelative(BlockFace.DOWN).getType().equals(Material.WOOL)) return;
-        player.setVelocity(player.getLocation().getDirection().multiply(1).add(new Vector(0, 1.5, 0)));
+        player.setVelocity(player.getLocation().getDirection().multiply(2).add(new Vector(0, 0.5, 0)));
         cPlayer.playSoundForPlayer(Sound.FIREWORK_LAUNCH);
         event.setCancelled(true);
     }
