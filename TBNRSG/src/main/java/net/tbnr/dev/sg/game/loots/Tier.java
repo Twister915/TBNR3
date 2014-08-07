@@ -52,17 +52,13 @@ public final class Tier {
         inventory.clear();
         int mDelta = max - min;
         int amt = min + Core.getRandom().nextInt(mDelta+1);
+        TierEntry[] tierEntries = entrySet.toArray(new TierEntry[entrySet.size()]);
         for (int i = 0; i < amt; i++) {
             TierEntry entry = null;
             do {
+                TierEntry tierEntry = tierEntries[Core.getRandom().nextInt(tierEntries.length)];
                 float v = Core.getRandom().nextFloat();
-                for (TierEntry tierEntry : entrySet) {
-                    if (tierEntry.probability > v) {
-                        entry = tierEntry;
-                        break;
-                    }
-                }
-
+                if (tierEntry.probability > v) entry = tierEntry;
             } while (entry == null);
             int i1 = Core.getRandom().nextInt(inventory.getSize());
             inventory.setItem(i1, new ItemStack(entry.material, entry.quantity, entry.dataValue));

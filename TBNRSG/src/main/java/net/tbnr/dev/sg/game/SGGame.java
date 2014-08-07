@@ -112,7 +112,7 @@ public final class SGGame implements Listener {
     @Getter private Integer startedWith;
     @Getter private SGGameState state = SGGameState.PRE_GAME;
     private Map<CPlayer, Point> cornicopiaPoints = new WeakHashMap<>();
-    private Map<CPlayer, Boolean> hungerFlags = new WeakHashMap<>();
+    private Map<CPlayer, Integer> hungerFlags = new WeakHashMap<>();
     private Timer deathmatchCountdown;
 
     public SGGame(GameManager manager, Iterable<CPlayer> players, SGMap map) {
@@ -191,6 +191,7 @@ public final class SGGame implements Listener {
             tribute.getBukkitPlayer().setGameMode(GameMode.SURVIVAL);
             spectatorGUI.addButton(new TributeButton(tribute));
         }
+        spectatorGUI.updateInventory();
 
         //Start the countdown
         new Timer(60, new PreGameCountdown()).start();
@@ -234,15 +235,25 @@ public final class SGGame implements Listener {
                     CPlayer victor = tributes.iterator().next();
                     Integer stat = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.WINS, victor, Integer.class);
                     if (stat == null) stat = 0;
-                    StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.WINS, victor, stat+1);
+                    StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.WINS, victor, stat + 1);
                     StatsManager.statChanged(Stat.WINS, 1, victor);
                     creditGameplay(victor);
-                    broadcastSound(Sound.ENDERDRAGON_DEATH, 1.2f);
-                    broadcastMessage(SurvivalGames.getInstance().getFormat("has-won", new String[]{"<won>", victor.getDisplayName()}));
+                    broadcastMessage(SurvivalGames.getInstance().getFormat("has-won", new String[]{"<name>", victor.getDisplayName()}));
                 }
+                broadcastSound(Sound.ENDERDRAGON_DEATH, 1.4f);
                 broadcastMessage(SurvivalGames.getInstance().getFormat("game-over", new String[]{"<time>", TimeUtils.formatDurationNicely(new Duration(gameStart, new Instant()))}));
                 manager.gameEnded();
                 break;
+        }
+    }
+
+    void checkForWin() {
+        if (tributes.size() <= 1) {
+            this.state = SGGameState.POST_GAME;
+            updateState();
+        } else if (tributes.size() <= 4 && this.state == SGGameState.GAMEPLAY) {
+            this.state = SGGameState.PRE_DEATHMATCH_1;
+            updateState();
         }
     }
 
@@ -305,11 +316,13 @@ public final class SGGame implements Listener {
                 break;
             }
         }
+        spectatorInventory.updateItems();
         broadcastMessage(SurvivalGames.getInstance().getFormat("tributes-remain", new String[]{"<tributes>", String.valueOf(tributes.size())}));
     }
 
     public void makeSpectator(CPlayer player) {
         spectators.add(player);
+        player.resetPlayer();
         Player bukkitPlayer = player.getBukkitPlayer();
         bukkitPlayer.setAllowFlight(true);
         bukkitPlayer.setFlying(true);
@@ -347,7 +360,7 @@ public final class SGGame implements Listener {
         if (!eventAppliesToTributes(event)) return;
         CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
         Point point = cornicopiaPoints.get(onlinePlayer);
-        if (Math.abs(point.getX()-event.getTo().getX()) > 1.0 || Math.abs(point.getZ() - event.getTo().getZ()) > 1.0) {
+        if (Math.abs(point.getX()-event.getTo().getX()) > 0.5 || Math.abs(point.getZ() - event.getTo().getZ()) > 0.5) {
             Location location = point.getLocation(world);
             location.setPitch(event.getTo().getPitch());
             location.setYaw(event.getTo().getYaw());
@@ -396,23 +409,27 @@ public final class SGGame implements Listener {
         for (CPlayer tribute : tributes) {
             tribute.getBukkitPlayer().playSound(bukkitPlayer.getLocation(), Sound.FIREWORK_LARGE_BLAST, 35f, 0.5f);
             tribute.sendMessage(SurvivalGames.getInstance().getFormat("death", new String[]{"<blocks>",
-                    String.valueOf(tribute.getBukkitPlayer().getLocation().distance(bukkitPlayer.getLocation()))}));
+                    String.valueOf(Math.ceil(tribute.getBukkitPlayer().getLocation().distance(bukkitPlayer.getLocation())))}));
             //PERFORMANCE NOTE: SQUARE ROOT FUNCTION USED IN A LOOP
             //¯\_(ツ)_/¯
         }
         creditGameplay(player);
-        if (tributes.size() <= 1) {
-            this.state = SGGameState.POST_GAME;
-            updateState();
-        } else if (tributes.size() <= 4 && this.state == SGGameState.GAMEPLAY) {
-            this.state = SGGameState.PRE_DEATHMATCH_1;
-            updateState();
-        }
+        checkForWin();
     }
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         event.setDeathMessage(null);
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        event.setQuitMessage(null);
+    }
+
+    @EventHandler
+    public void onPlayerKick(PlayerKickEvent event) {
+        event.setLeaveMessage(null);
     }
 
     @EventHandler
@@ -510,8 +527,12 @@ public final class SGGame implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            event.setCancelled(!(hungerFlags.containsKey(onlinePlayer) ? hungerFlags.get(onlinePlayer) : false));
-            hungerFlags.put(onlinePlayer, event.isCancelled());
+            Integer integer = hungerFlags.get(onlinePlayer);
+            if (integer == null) integer = 0;
+            event.setCancelled(integer < 4);
+            integer++;
+            if (integer > 4) integer = 0;
+            hungerFlags.put(onlinePlayer, integer);
             Core.logDebug("Survivalgames - cancel hunger for " + onlinePlayer.getName() + ":" + event.isCancelled());
         }
     }
@@ -523,7 +544,6 @@ public final class SGGame implements Listener {
         CPlayer onlinePlayer = Core.getOnlinePlayer((Player) entity);
         if (spectators.contains(onlinePlayer)) {
             event.setCancelled(true);
-            return;
         }
     }
 
@@ -541,6 +561,11 @@ public final class SGGame implements Listener {
     @EventHandler
     public void onPlayerPickup(PlayerPickupItemEvent event) {
         if (!eventAppliesToTributes(event) && event.getItem().getLocation().getWorld().equals(world)) event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onCreatureSpawn(CreatureSpawnEvent event) {
+        event.getEntity().remove();
     }
 
     @Data
@@ -573,12 +598,14 @@ public final class SGGame implements Listener {
     }
 
     private class PreDeathmatchCountdown extends TimerDelegateImplStateChange {
+        private final Integer[] broadcastSeconds = new Integer[]{60, 30, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
         public PreDeathmatchCountdown(SGGameState state) {
             super(state);
         }
 
         @Override
         protected void announceSecond(Integer second) {
+            if (!(RandomUtils.contains(broadcastSeconds, second))) return;
             broadcastMessage(SurvivalGames.getInstance().getFormat("pre-deathmatch" + (state == SGGameState.PRE_DEATHMATCH_2 ? "-2" : ""), new String[]{"<seconds>", String.valueOf(second)}));
             broadcastSound(Sound.ORB_PICKUP, 1f - (second < 10 ? 0.1f * second : 0f));
         }

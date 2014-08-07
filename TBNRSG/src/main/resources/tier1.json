@@ -5,6 +5,10 @@
         {
             "material" : "FISHING_ROD",
             "probability" : 1
+        },
+        {
+            "material" : "DIAMOND",
+            "probability" : 0.5
         }
     ]
 }

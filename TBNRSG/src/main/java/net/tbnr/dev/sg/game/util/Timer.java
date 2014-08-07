@@ -17,7 +17,7 @@ public final class Timer implements Runnable {
     public Timer start() {
         if (task != null) throw new IllegalStateException("The countdown is already running!");
         secondsPassed = 0;
-        task = Bukkit.getScheduler().runTaskTimer(SurvivalGames.getInstance(), this, 20L, 20L);
+        task = Bukkit.getScheduler().runTaskLater(SurvivalGames.getInstance(), this, 20L);
         delegate.countdownStarted(this, length);
         return this;
     }
@@ -30,7 +30,10 @@ public final class Timer implements Runnable {
             task.cancel();
             task = null;
         }
-        else delegate.countdownChanged(this, secondsPassed, length);
+        else {
+            delegate.countdownChanged(this, secondsPassed, length);
+            task = Bukkit.getScheduler().runTaskLater(SurvivalGames.getInstance(), this, 20L);
+        }
     }
 
     public Duration getTimeRemaining() {
@@ -38,7 +41,7 @@ public final class Timer implements Runnable {
     }
 
     public void cancel() {
-        task.cancel();
+        if (task != null) task.cancel();
         task = null;
     }
 

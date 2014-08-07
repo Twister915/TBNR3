@@ -35,6 +35,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
 
     public GameManager() {
         SurvivalGames.getInstance().registerListener(this);
+        Core.getPlayerManager().registerCPlayerConnectionListener(this);
         preGameLobby = SurvivalGames.getInstance().getMapManager().getPreGameLobby();
         preGameLobby.getMap().load("PRE_GAME");
         World world = preGameLobby.getMap().getWorld();
@@ -71,6 +72,8 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
         for (SGMap sgMap : votingSession.getMapSelection()) {
             player.sendMessage(SurvivalGames.getInstance().getFormat("voting-options.map-line", new String[]{"<name>", sgMap.getName()}, new String[]{"<authors>", sgMap.getAuthor()}));
         }
+        Core.getOnlinePlayer(event.getPlayer()).resetPlayer();
+        event.getPlayer().getInventory().clear();
     }
 
     void beginGame() {
@@ -132,7 +135,10 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
     @Override
     public void onPlayerDisconnect(CPlayer player) {
         if (runningGame == null) votingSession.removeVoteFor(player);
-        else runningGame.removeTribute(player);
+        else {
+            runningGame.removeTribute(player);
+            runningGame.startGame();
+        }
     }
 
     private class GameStartTimer implements TimerDelegate {
@@ -150,7 +156,6 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
                 for (CPlayer cPlayer : Core.getOnlinePlayers()) {
                     cPlayer.sendMessage(format);
                     cPlayer.playSoundForPlayer(Sound.CLICK);
-                    startTimer();
                 }
             } else {
                 beginGame();
