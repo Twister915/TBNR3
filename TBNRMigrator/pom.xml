@@ -9,17 +9,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>TBNRSG</artifactId>
+    <artifactId>TBNRMigrator</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>net.cogzmc.tbnr</groupId>
-            <artifactId>TBNRNetwork</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
             <groupId>net.cogzmc</groupId>
-            <artifactId>CoreMaps</artifactId>
+            <artifactId>CoreBase</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

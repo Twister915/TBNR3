@@ -1,0 +1,5 @@
+name: TBNRNetwork
+main: net.tbnr.dev.TBNRNetwork
+version: 1.0
+description: TBNR Network Driver
+authors: [Twister915]
