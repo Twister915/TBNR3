@@ -7,6 +7,7 @@ import net.cogzmc.core.modular.ModuleMeta;
 import net.tbnr.dev.commands.ClearChatCommand;
 import net.tbnr.dev.effects.AntiLeafDecay;
 import net.tbnr.dev.effects.BouncyPads;
+import net.tbnr.dev.effects.HeightTracker;
 import net.tbnr.dev.effects.PlayerGate;
 import net.tbnr.dev.inventory.player.PlayerInventory;
 import net.tbnr.dev.parkour.ParkourCommand;
@@ -31,8 +32,6 @@ public final class TBNRHub extends ModularPlugin {
         playerInventory = new PlayerInventory();
         registerAllCommands();
         registerAllListeners();
-        HidePlayerListener.enable();
-        SnowballMinigame.enable();
     }
 
     @Override
@@ -49,5 +48,8 @@ public final class TBNRHub extends ModularPlugin {
         new BouncyPads().enable();
         new AntiLeafDecay().enable();
         PlayerGate.enable();
+        HeightTracker.enable();
+        HidePlayerListener.enable();
+        SnowballMinigame.enable();
     }
 }

@@ -3,3 +3,4 @@ listeners-enable:
   below-zero: true
   leaf-decay: true
   player-gate: true
+max-height: 128
