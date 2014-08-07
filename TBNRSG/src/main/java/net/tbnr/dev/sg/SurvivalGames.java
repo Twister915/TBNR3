@@ -6,6 +6,7 @@ import net.cogzmc.core.modular.ModularPlugin;
 import net.cogzmc.core.modular.ModuleMeta;
 import net.cogzmc.core.player.mongo.CMongoDatabase;
 import net.tbnr.dev.sg.command.SGAdminCommand;
+import net.tbnr.dev.sg.game.GameManager;
 import net.tbnr.dev.sg.game.map.SGMongoMapManager;
 import net.tbnr.dev.sg.setup.SGSetupManager;
 
@@ -14,6 +15,7 @@ public final class SurvivalGames extends ModularPlugin {
     @Getter private static SurvivalGames instance;
     @Getter private SGMongoMapManager mapManager;
     @Getter private SGSetupManager setupManager;
+    @Getter private GameManager gameManager;
 
     @Override
     protected void onModuleEnable() throws Exception {
@@ -23,5 +25,6 @@ public final class SurvivalGames extends ModularPlugin {
         this.setupManager = new SGSetupManager();
         registerCommand(new SGAdminCommand());
         registerListener(new WorldListener());
+        gameManager = new GameManager();
     }
 }

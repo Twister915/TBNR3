@@ -1,21 +1,23 @@
 package net.tbnr.dev.sg.game.map;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mongodb.*;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
+import net.cogzmc.core.Core;
 import net.cogzmc.core.maps.CMap;
 import net.cogzmc.core.maps.CoreMaps;
 import net.cogzmc.core.player.mongo.CMongoDatabase;
 import net.cogzmc.core.util.Point;
+import net.tbnr.dev.sg.game.PreGameLobby;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import static net.cogzmc.core.player.mongo.MongoUtils.getListFor;
 import static net.cogzmc.core.player.mongo.MongoUtils.getValueFrom;
 
 @Data
@@ -24,6 +26,7 @@ public final class SGMongoMapManager {
 
     private final CMongoDatabase database;
     @Getter(AccessLevel.NONE) private final Set<SGMap> maps = new HashSet<>();
+    private PreGameLobby preGameLobby;
 
     public void reloadMaps() {
         maps.clear();
@@ -42,6 +45,19 @@ public final class SGMongoMapManager {
     public void saveMap(SGMap map) {
         maps.add(map);
         database.getCollection(MAPS_COLLECTION).save(objectFromMap(map));
+    }
+
+    public Iterable<SGMap> getRandomMaps(Integer size) {
+        Set<SGMap> maps = new HashSet<>();
+        ImmutableList<SGMap> maps1 = getMaps().asList();
+        while (maps.size() < size) {
+            SGMap map;
+            do {
+                map = maps1.get(Core.getRandom().nextInt(maps1.size()));
+            } while (maps.contains(map));
+            maps.add(map);
+        }
+        return maps;
     }
 
     private static enum SGMapKeys {

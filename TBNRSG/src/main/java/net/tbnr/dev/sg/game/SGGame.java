@@ -171,6 +171,15 @@ public final class SGGame implements Listener {
             case PRE_DEATHMATCH_2:
                 broadcastSound(Sound.LEVEL_UP, 1.5f);
                 new Timer(10, new PreDeathmatchCountdown(SGGameState.DEATHMATCH)).start();
+                Iterator<Point> iterator = map.getDeathmatchSpawn().iterator();
+                Iterator<CPlayer> iterator1 = tributes.iterator();
+                while (iterator.hasNext() && iterator1.hasNext()) {
+                    Point next = iterator.next();
+                    iterator1.next().getBukkitPlayer().teleport(next.getLocation(world));
+                }
+                while (iterator1.hasNext()) {
+                    iterator1.next().getBukkitPlayer().kickPlayer(ChatColor.RED + "Your game has ended, there is not enough room for you on the cornicopia!");
+                }
                 break;
             case DEATHMATCH:
                 break;
@@ -410,7 +419,6 @@ public final class SGGame implements Listener {
             event.setCancelled(true);
             return;
         }
-        if (!tributes.contains(onlinePlayer)) return;
     }
 
     @EventHandler
