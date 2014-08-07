@@ -31,7 +31,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Data
-public final class SGSetupSession implements Listener {
+public final class SGSetupSession implements Listener, SetupSession {
     private final CPlayer player;
     private final World world;
 
@@ -173,7 +173,7 @@ public final class SGSetupSession implements Listener {
         player.sendMessage(SurvivalGames.getInstance().getFormat("setup.start-cornicopia"));
     }
 
-    void cancel() {
+    public void cancel() {
         player.sendMessage(SurvivalGames.getInstance().getFormat("setup.setup-cancelled"));
         HandlerList.unregisterAll(this);
     }

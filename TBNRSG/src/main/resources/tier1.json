@@ -1,0 +1,10 @@
+{
+    "min_items" : 2,
+    "max_items" : 5,
+    "entries" : [
+        {
+            "material" : "FISHING_ROD",
+            "probability" : 1
+        }
+    ]
+}

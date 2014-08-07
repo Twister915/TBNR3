@@ -9,11 +9,14 @@ import net.cogzmc.core.util.Point;
 import net.cogzmc.util.RandomUtils;
 import net.tbnr.dev.ServerHelper;
 import net.tbnr.dev.sg.SurvivalGames;
+import net.tbnr.dev.sg.command.VoteCommand;
 import net.tbnr.dev.sg.game.map.SGMap;
 import net.tbnr.dev.sg.game.util.Timer;
 import net.tbnr.dev.sg.game.util.TimerDelegate;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
@@ -28,18 +31,25 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
     private final PreGameListener listener;
     private Iterator<Point> spawnPoints;
     @Getter private final VotingSession votingSession;
+    private Timer gameTimer;
 
     public GameManager() {
         SurvivalGames.getInstance().registerListener(this);
         preGameLobby = SurvivalGames.getInstance().getMapManager().getPreGameLobby();
+        preGameLobby.getMap().load("PRE_GAME");
+        World world = preGameLobby.getMap().getWorld();
+        world.setTime(0);
+        world.setStorm(false);
+        world.setGameRuleValue("doDaylightCycle", "false");
         listener = SurvivalGames.getInstance().registerListener(new PreGameListener());
         spawnPoints = preGameLobby.getSpawnPoints().iterator();
         votingSession = new VotingSession(SurvivalGames.getInstance().getMapManager().getRandomMaps(5));
+        SurvivalGames.getInstance().registerCommand(new VoteCommand());
         startTimer();
     }
 
     private void startTimer() {
-        new Timer(60, new GameStartTimer());
+        gameTimer = new Timer(60, new GameStartTimer()).start();
     }
 
     private Point getNextSpawnPoint() {
@@ -49,8 +59,18 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        event.getPlayer().teleport(getNextSpawnPoint().getLocation(preGameLobby.getMap().getWorld()));
-        event.setJoinMessage(SurvivalGames.getInstance().getFormat("join-message", new String[]{"<player>", Core.getOnlinePlayer(event.getPlayer()).getDisplayName()}));
+        Player player = event.getPlayer();
+        if (runningGame != null) {
+            player.teleport(runningGame.getMap().getCornicopiaSpawnPoints().iterator().next().getLocation(runningGame.getWorld()));
+            runningGame.makeSpectator(Core.getOnlinePlayer(player));
+            return;
+        }
+        player.teleport(getNextSpawnPoint().getLocation(preGameLobby.getMap().getWorld()));
+        event.setJoinMessage(SurvivalGames.getInstance().getFormat("join-message", new String[]{"<player>", Core.getOnlinePlayer(player).getDisplayName()}));
+        player.sendMessage(SurvivalGames.getInstance().getFormat("voting-options.header"));
+        for (SGMap sgMap : votingSession.getMapSelection()) {
+            player.sendMessage(SurvivalGames.getInstance().getFormat("voting-options.map-line", new String[]{"<name>", sgMap.getName()}, new String[]{"<authors>", sgMap.getAuthor()}));
+        }
     }
 
     void beginGame() {
@@ -58,6 +78,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
     }
 
     void beginGame(final SGMap map) {
+        if (gameTimer != null && gameTimer.isRunning()) gameTimer.cancel();
         String format = SurvivalGames.getInstance().getFormat("game-starting");
         for (CPlayer cPlayer : Core.getOnlinePlayers()) {
             cPlayer.playSoundForPlayer(Sound.ENDERDRAGON_GROWL, 1f, 1.3f);
@@ -110,7 +131,8 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
 
     @Override
     public void onPlayerDisconnect(CPlayer player) {
-        votingSession.removeVoteFor(player);
+        if (runningGame == null) votingSession.removeVoteFor(player);
+        else runningGame.removeTribute(player);
     }
 
     private class GameStartTimer implements TimerDelegate {
@@ -123,7 +145,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
 
         @Override
         public void countdownEnded(Timer timer, Integer totalSeconds) {
-            if (Core.getOnlinePlayers().size() > SurvivalGames.getInstance().getConfig().getInt("min-players", 12)) {
+            if (Core.getOnlinePlayers().size() < SurvivalGames.getInstance().getConfig().getInt("min-players", 12)) {
                 String format = SurvivalGames.getInstance().getFormat("fail-start");
                 for (CPlayer cPlayer : Core.getOnlinePlayers()) {
                     cPlayer.sendMessage(format);
@@ -142,7 +164,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
 
         private void handleDisplay(Integer second) {
             if (RandomUtils.contains(broadcastSeconds, second)) {
-                String format = SurvivalGames.getInstance().getFormat("lobby-format", new String[]{"<serconds>", String.valueOf(second)});
+                String format = SurvivalGames.getInstance().getFormat("lobby-message", new String[]{"<seconds>", String.valueOf(second)});
                 for (CPlayer cPlayer : Core.getOnlinePlayers()) {
                     cPlayer.sendMessage(format);
                     cPlayer.playSoundForPlayer(Sound.ORB_PICKUP);

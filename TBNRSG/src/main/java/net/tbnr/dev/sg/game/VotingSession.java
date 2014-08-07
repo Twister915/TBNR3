@@ -22,7 +22,7 @@ public final class VotingSession {
         return votes.get(player);
     }
 
-    void castVote(CPlayer player, SGMap map) {
+    public void castVote(CPlayer player, SGMap map) {
         votes.put(player, map);
     }
 
@@ -49,6 +49,6 @@ public final class VotingSession {
         for (Map.Entry<SGMap, Integer> sgMapIntegerEntry : mapVotes.entrySet()) {
             if (sgMapIntegerEntry.getValue() > mostVotes) votedFor = sgMapIntegerEntry.getKey();
         }
-        return votedFor;
+        return votedFor == null ? mapSelection.iterator().next() : votedFor;
     }
 }

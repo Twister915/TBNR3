@@ -32,10 +32,20 @@ public final class SGMongoMapManager {
         maps.clear();
         DBCollection collection = database.getCollection(MAPS_COLLECTION);
         for (DBObject dbObject : collection.find()) {
-            SGMap sgMap = mapFromDB(dbObject);
-            if (sgMap == null) continue;
-            maps.add(sgMap);
+            try {
+                if (dbObject.containsField(SGMapKeys.PRE_GAME_LOBBY_FLAG.toString())) {
+                    preGameLobby = gameLobbyFromDB(dbObject);
+                    continue;
+                }
+                SGMap sgMap = mapFromDB(dbObject);
+                if (sgMap == null) continue;
+                maps.add(sgMap);
+            } catch (Throwable t) {
+                t.printStackTrace();
+                continue;
+            }
         }
+        if (preGameLobby == null) throw new IllegalStateException("There is no pre-game lobby defined!");
     }
 
     public ImmutableSet<SGMap> getMaps() {
@@ -45,6 +55,11 @@ public final class SGMongoMapManager {
     public void saveMap(SGMap map) {
         maps.add(map);
         database.getCollection(MAPS_COLLECTION).save(objectFromMap(map));
+    }
+
+    public void savePreGameLobby(PreGameLobby lobby) {
+        preGameLobby = lobby;
+        database.getCollection(MAPS_COLLECTION).save(objectForPreGameLobby(lobby));
     }
 
     public Iterable<SGMap> getRandomMaps(Integer size) {
@@ -74,7 +89,10 @@ public final class SGMongoMapManager {
         Y,
         Z,
         PITCH,
-        YAW;
+        YAW,
+        PRE_GAME_LOBBY_FLAG,
+        PRE_GAME_SPAWN,
+        PRE_GAME_VILLAGER;
 
         @Override
         public String toString() {
@@ -108,6 +126,23 @@ public final class SGMongoMapManager {
         objectBuilder.add(SGMapKeys.TIER_2_CHESTS.toString(), getPointList(map.getTier2chests()));
         objectBuilder.add(SGMapKeys.CORNICOPIA_CHESTS.toString(), getPointList(map.getCornicopiaChests()));
         objectBuilder.add(SGMapKeys.DEATHMATCH_SPAWN.toString(), getPointList(map.getDeathmatchSpawn()));
+        return objectBuilder.get();
+    }
+
+    private static PreGameLobby gameLobbyFromDB(DBObject object) {
+        CMap mapByID = CoreMaps.getInstance().getMapManager().getMapByID(UUID.fromString(getValueFrom(object, SGMapKeys.MAP_ID, String.class)));
+        if (mapByID == null) return null;
+        Set<Point> spawn = getPointsFrom((BasicDBList)object.get(SGMapKeys.PRE_GAME_SPAWN.toString()));
+        Set<Point> villager = getPointsFrom((BasicDBList)object.get(SGMapKeys.PRE_GAME_VILLAGER.toString()));
+        return new PreGameLobby(mapByID, spawn, villager);
+    }
+
+    private static DBObject objectForPreGameLobby(PreGameLobby gameLobby) {
+        BasicDBObjectBuilder objectBuilder = new BasicDBObjectBuilder();
+        objectBuilder.add(SGMapKeys.PRE_GAME_SPAWN.toString(), getPointList(gameLobby.getSpawnPoints()));
+        objectBuilder.add(SGMapKeys.PRE_GAME_VILLAGER.toString(), getPointList(gameLobby.getPerkVillagers()));
+        objectBuilder.add(SGMapKeys.MAP_ID.toString(), gameLobby.getMap().getMapId().toString());
+        objectBuilder.add(SGMapKeys.PRE_GAME_LOBBY_FLAG.toString(), true);
         return objectBuilder.get();
     }
 

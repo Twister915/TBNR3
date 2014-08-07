@@ -15,10 +15,10 @@ public final class StatsManager {
 
     public static void statChanged(Stat stat, Integer delta, CPlayer player) {
         player.sendMessage(TBNRNetwork.getInstance().getFormat("stat-changed", false,
-                new String[]{"<stat>", stat.name().replaceAll("_", "").trim().toUpperCase()},
+                new String[]{"<stat>", stat.name().replaceAll("_", " ").trim().toUpperCase()},
                 new String[]{"<delta>", String.valueOf(delta)},
                 new String[]{"<color>", (delta > 0 ? ChatColor.GREEN : ChatColor.RED).toString()},
-                new String[]{"<symbol>", (delta > 0 ? "+" : "-")})
+                new String[]{"<symbol>", (delta > 0 ? "+" : "")})
         );
         player.playSoundForPlayer(Sound.ORB_PICKUP, 1f, 1 + ((delta > 0 ? 1f : -1f) * 0.2f));
     }

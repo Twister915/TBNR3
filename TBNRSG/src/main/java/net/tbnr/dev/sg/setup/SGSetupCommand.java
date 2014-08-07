@@ -8,7 +8,7 @@ import net.cogzmc.core.modular.command.ModuleCommand;
 @CommandMeta(aliases = {"setup", "mapcreate"})
 public final class SGSetupCommand extends ModuleCommand {
     public SGSetupCommand() {
-        super("setupmap", new StartSubCommand(), new CancelSubCommand());
+        super("setupmap", new StartSubCommand(), new CancelSubCommand(), new LobbySubCommand());
     }
 
     @Override

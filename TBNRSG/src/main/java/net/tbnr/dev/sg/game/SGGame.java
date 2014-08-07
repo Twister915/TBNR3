@@ -14,10 +14,12 @@ import net.cogzmc.core.util.TimeUtils;
 import net.cogzmc.util.RandomUtils;
 import net.tbnr.dev.*;
 import net.tbnr.dev.sg.SurvivalGames;
+import net.tbnr.dev.sg.game.loots.Tier;
 import net.tbnr.dev.sg.game.map.SGMap;
-import net.tbnr.dev.sg.game.util.*;
 import net.tbnr.dev.sg.game.util.Timer;
+import net.tbnr.dev.sg.game.util.TimerDelegate;
 import org.bukkit.*;
+import org.bukkit.block.Chest;
 import org.bukkit.entity.*;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -28,25 +30,34 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
-import org.bukkit.event.player.PlayerEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
+import org.joda.time.Duration;
 import org.joda.time.Instant;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
 import java.util.*;
 
 public final class SGGame implements Listener {
+    private final static Integer DEFAULT_POINTS = 1000;
+
     private final ControlledInventory spectatorInventory = new ControlledInventory() {
+        {
+            SurvivalGames.getInstance().registerListener(this);
+        }
+
         @Override
         protected ControlledInventoryButton getNewButtonAt(Integer slot) {
             switch (slot) {
                 case 4:
-                    new ControlledInventoryButton() {
+                    return new ControlledInventoryButton() {
                         @Override
                         protected ItemStack getStack(CPlayer player) {
                             ItemStack spectator = new ItemStack(Material.COMPASS);
@@ -61,7 +72,6 @@ public final class SGGame implements Listener {
                             spectatorGUI.open(player);
                         }
                     };
-                    break;
                 case 8:
                     return new ControlledInventoryButton() {
                         @Override
@@ -90,8 +100,12 @@ public final class SGGame implements Listener {
     private final Set<CPlayer> tributes = new HashSet<>();
     private final Set<CPlayer> spectators = new HashSet<>();
     private final Set<WeakReference<CPlayer>> limbo = new HashSet<>(); //These players have died, and will soon either respawn or disconnect. Keep an eye on them.
-    private final SGMap map;
-    private final World world;
+    @Getter private final SGMap map;
+    @Getter private final World world;
+
+    /* tier stuff */
+    private final Tier tier1;
+    private final Tier tier2;
 
     /* game stuff */
     @Getter private Instant gameStart;
@@ -109,9 +123,26 @@ public final class SGGame implements Listener {
         if (!map.getMap().isLoaded()) throw new IllegalStateException("The SGMap you have passed is not loaded into Bukkit!");
         this.map = map;
         world = map.getMap().getWorld();
+        try {
+            tier1 = new Tier(readResource("tier1.json"));
+            tier2 = new Tier(readResource("tier2.json"));
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to start game", e);
+        }
+    }
+
+    private static JSONObject readResource(String s) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(SurvivalGames.getInstance().getResource(s)));
+        StringBuilder builder = new StringBuilder();
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
+            builder.append(line);
+        }
+        return (JSONObject) JSONValue.parse(builder.toString());
     }
 
     public void startGame() {
+        SurvivalGames.getInstance().registerListener(this);
         Iterator<CPlayer> iterator = tributes.iterator();
         while (iterator.hasNext()) {
             CPlayer next = iterator.next();
@@ -137,7 +168,7 @@ public final class SGGame implements Listener {
         }
         //setup chests
         for (Point point : map.getCornicopiaChests()) {
-            point.getLocation(world).getBlock().setType(Material.AIR);
+            point.getLocation(world).getBlock().setType(Material.CHEST);
         }
         for (Point point : map.getTier1chests()) {
             point.getLocation(world).getBlock().setType(Material.CHEST);
@@ -145,6 +176,10 @@ public final class SGGame implements Listener {
         for (Point point : map.getTier2chests()) {
             point.getLocation(world).getBlock().setType(Material.CHEST);
         }
+        world.setTime(0);
+        world.setGameRuleValue("doDaylightCycle", "false");
+        world.setStorm(false);
+        world.setDifficulty(Difficulty.EASY);
         //Cleanup entities
         for (Entity e : world.getEntitiesByClasses(Item.class, LivingEntity.class)) {
             if (e instanceof Player) continue;
@@ -152,6 +187,8 @@ public final class SGGame implements Listener {
         }
 
         for (CPlayer tribute : tributes) {
+            tribute.resetPlayer();
+            tribute.getBukkitPlayer().setGameMode(GameMode.SURVIVAL);
             spectatorGUI.addButton(new TributeButton(tribute));
         }
 
@@ -159,9 +196,18 @@ public final class SGGame implements Listener {
         new Timer(60, new PreGameCountdown()).start();
     }
 
+    private void creditGameplay(CPlayer player) {
+        Integer stat = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.GAMES_PLAYED, player, Integer.class);
+        if (stat == null) stat = 0;
+        StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.GAMES_PLAYED, player, stat);
+        if (player.isOnline()) StatsManager.statChanged(Stat.GAMES_PLAYED, 1, player);
+    }
+
     private void updateState() {
         switch (state) {
             case GAMEPLAY:
+                fillChests();
+                broadcastMessage(SurvivalGames.getInstance().getFormat("game-started"));
                 deathmatchCountdown = new Timer(1500, new GameplayTimeLimiter()).start();
                 break;
             case PRE_DEATHMATCH_1:
@@ -184,8 +230,31 @@ public final class SGGame implements Listener {
             case DEATHMATCH:
                 break;
             case POST_GAME:
+                if (tributes.size() == 1) {
+                    CPlayer victor = tributes.iterator().next();
+                    Integer stat = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.WINS, victor, Integer.class);
+                    if (stat == null) stat = 0;
+                    StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.WINS, victor, stat+1);
+                    StatsManager.statChanged(Stat.WINS, 1, victor);
+                    creditGameplay(victor);
+                    broadcastSound(Sound.ENDERDRAGON_DEATH, 1.2f);
+                    broadcastMessage(SurvivalGames.getInstance().getFormat("has-won", new String[]{"<won>", victor.getDisplayName()}));
+                }
+                broadcastMessage(SurvivalGames.getInstance().getFormat("game-over", new String[]{"<time>", TimeUtils.formatDurationNicely(new Duration(gameStart, new Instant()))}));
                 manager.gameEnded();
                 break;
+        }
+    }
+
+    private void fillChests() {
+        for (Point point : map.getCornicopiaChests()) {
+            tier2.fillChest((Chest) point.getLocation(world).getBlock().getState());
+        }
+        for (Point point : map.getTier2chests()) {
+            tier2.fillChest((Chest)point.getLocation(world).getBlock().getState());
+        }
+        for (Point point : map.getTier1chests()) {
+            tier1.fillChest((Chest)point.getLocation(world).getBlock().getState());
         }
     }
 
@@ -205,11 +274,9 @@ public final class SGGame implements Listener {
         for (CPlayer spectator : spectators) {
             spectator.sendMessage(message);
         }
-    }
-
-    private void dropChests() {
-        for (Point point : map.getCornicopiaChests()) {
-            world.spawnFallingBlock(point.getLocation(world).add(0, 12, 0), Material.CHEST, (byte) 0);
+        for (WeakReference<CPlayer> cPlayerWeakReference : limbo) {
+            CPlayer player;
+            if ((player = cPlayerWeakReference.get()) != null) player.sendMessage(message);
         }
     }
 
@@ -238,16 +305,39 @@ public final class SGGame implements Listener {
                 break;
             }
         }
+        broadcastMessage(SurvivalGames.getInstance().getFormat("tributes-remain", new String[]{"<tributes>", String.valueOf(tributes.size())}));
     }
 
-    private void makeSpectator(CPlayer player) {
+    public void makeSpectator(CPlayer player) {
         spectators.add(player);
         Player bukkitPlayer = player.getBukkitPlayer();
         bukkitPlayer.setAllowFlight(true);
+        bukkitPlayer.setFlying(true);
         bukkitPlayer.setVelocity(new Vector(0, 2, 0));
+        for (ItemStack itemStack : bukkitPlayer.getInventory()) {
+            if (itemStack == null) continue;
+            world.dropItemNaturally(bukkitPlayer.getLocation(), itemStack);
+        }
+        bukkitPlayer.getInventory().clear();
         player.playSoundForPlayer(Sound.AMBIENCE_RAIN, 1f, 1.2f);
         spectatorInventory.setActive(player);
         spectatorInventory.updateItems();
+        for (CPlayer tribute : tributes) {
+            tribute.getBukkitPlayer().hidePlayer(bukkitPlayer);
+        }
+        for (CPlayer spectator : spectators) {
+            Player bukkitPlayer1 = spectator.getBukkitPlayer();
+            if (bukkitPlayer.canSee(bukkitPlayer1)) bukkitPlayer.hidePlayer(bukkitPlayer1);
+            bukkitPlayer1.hidePlayer(bukkitPlayer);
+        }
+        try {
+            Object handle = bukkitPlayer.getClass().getMethod("getHandle").invoke(bukkitPlayer);
+            handle.getClass().getField("height").set(handle, 0f);
+            handle.getClass().getField("width").set(handle, 0f);
+        } catch (Exception e) {
+            SurvivalGames.getInstance().logMessage(ChatColor.RED + "Unable to hide spectator from arrows!");
+            e.printStackTrace();
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -258,7 +348,10 @@ public final class SGGame implements Listener {
         CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
         Point point = cornicopiaPoints.get(onlinePlayer);
         if (Math.abs(point.getX()-event.getTo().getX()) > 1.0 || Math.abs(point.getZ() - event.getTo().getZ()) > 1.0) {
-            event.getPlayer().teleport(point.getLocation(world));
+            Location location = point.getLocation(world);
+            location.setPitch(event.getTo().getPitch());
+            location.setYaw(event.getTo().getYaw());
+            event.getPlayer().teleport(location);
             onlinePlayer.playSoundForPlayer(Sound.CREEPER_HISS, 1f, 1.3f);
             onlinePlayer.sendMessage(SurvivalGames.getInstance().getFormat("cornicopia-bounceback"));
         }
@@ -272,17 +365,23 @@ public final class SGGame implements Listener {
         if (!tributes.contains(player)) return;
         limbo.add(new WeakReference<>(player));
         removeTribute(player);
-        StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.DEATHS, player, StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.DEATHS, player, Integer.class) + 1);
+        Integer deaths = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.DEATHS, player, Integer.class);
+        if (deaths == null) deaths = 0;
+        StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.DEATHS, player, deaths + 1);
         StatsManager.statChanged(Stat.DEATHS, 1, player);
         Integer oldPoints = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.POINTS, player, Integer.class);
-        player.sendMessage(SurvivalGames.getInstance().getFormat("you-died"));
+        if (oldPoints == null) oldPoints = DEFAULT_POINTS;
         if (bukkitPlayer.getKiller() != null) {
             CPlayer killer = Core.getOnlinePlayer(bukkitPlayer.getKiller());
-            StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.KILLS, killer, StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.KILLS, killer, Integer.class) + 1);
+            Integer killz = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.KILLS, killer, Integer.class);
+            if (killz == null) killz = 0;
+            StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.KILLS, killer, killz + 1);
             StatsManager.statChanged(Stat.KILLS, 1, killer);
             int gainedPoints = ((int) Math.floor(oldPoints * .15));
+            Integer points = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.POINTS, killer, Integer.class);
+            if (points == null) points = DEFAULT_POINTS;
             StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.POINTS, killer,
-                    StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.POINTS, killer, Integer.class) + gainedPoints
+                   points + gainedPoints
             );
             StatsManager.statChanged(Stat.POINTS, gainedPoints, killer);
             String health = String.format("%.1f", killer.getBukkitPlayer().getHealthScale() / 2f);
@@ -292,6 +391,7 @@ public final class SGGame implements Listener {
         int newPoints = (int) (oldPoints * .9);
         StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.POINTS, player, newPoints);
         StatsManager.statChanged(Stat.POINTS, newPoints-oldPoints, player);
+        player.sendMessage(SurvivalGames.getInstance().getFormat("you-died"));
         bukkitPlayer.getWorld().strikeLightningEffect(bukkitPlayer.getLocation());
         for (CPlayer tribute : tributes) {
             tribute.getBukkitPlayer().playSound(bukkitPlayer.getLocation(), Sound.FIREWORK_LARGE_BLAST, 35f, 0.5f);
@@ -300,6 +400,7 @@ public final class SGGame implements Listener {
             //PERFORMANCE NOTE: SQUARE ROOT FUNCTION USED IN A LOOP
             //¯\_(ツ)_/¯
         }
+        creditGameplay(player);
         if (tributes.size() <= 1) {
             this.state = SGGameState.POST_GAME;
             updateState();
@@ -405,8 +506,13 @@ public final class SGGame implements Listener {
         CPlayer onlinePlayer = Core.getOnlinePlayer((Player) entity);
         if (spectators.contains(onlinePlayer)) event.setCancelled(true);
         else if (tributes.contains(onlinePlayer)) {
+            if (state == SGGameState.PRE_GAME) {
+                event.setCancelled(true);
+                return;
+            }
             event.setCancelled(!(hungerFlags.containsKey(onlinePlayer) ? hungerFlags.get(onlinePlayer) : false));
             hungerFlags.put(onlinePlayer, event.isCancelled());
+            Core.logDebug("Survivalgames - cancel hunger for " + onlinePlayer.getName() + ":" + event.isCancelled());
         }
     }
 
@@ -427,10 +533,19 @@ public final class SGGame implements Listener {
         if (damager instanceof Player && spectators.contains(Core.getOnlinePlayer((Player) damager))) event.setCancelled(true);
     }
 
+    @EventHandler
+    public void onPlayerDrop(PlayerDropItemEvent event) {
+        if (eventAppliesToSpectators(event)) event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onPlayerPickup(PlayerPickupItemEvent event) {
+        if (!eventAppliesToTributes(event) && event.getItem().getLocation().getWorld().equals(world)) event.setCancelled(true);
+    }
+
     @Data
     private class TimerDelegateImplStateChange implements TimerDelegate {
         protected final SGGameState state;
-        private final Integer[] broadcastSeconds = new Integer[]{60, 30, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
 
         @Override
         public void countdownStarted(Timer timer, Integer totalSeconds) {
@@ -470,13 +585,14 @@ public final class SGGame implements Listener {
     }
 
     private class PreGameCountdown extends TimerDelegateImplStateChange {
+        private final Integer[] broadcastSeconds = new Integer[]{60, 30, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
         private PreGameCountdown() {
             super(SGGameState.GAMEPLAY);
         }
 
         @Override
         protected void announceSecond(Integer second) {
-            if (second == 30) SGGame.this.dropChests();
+            if (!RandomUtils.contains(broadcastSeconds, second)) return;
             SGGame.this.broadcastMessage(SurvivalGames.getInstance().getFormat("pre-game-countdown", new String[]{"<seconds>", String.valueOf(second)}));
             SGGame.this.broadcastSound(Sound.ORB_PICKUP, 1f - (second < 10 ? 0.1f * second : 0f));
         }
