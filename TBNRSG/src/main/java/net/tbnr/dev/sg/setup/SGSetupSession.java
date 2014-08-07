@@ -48,6 +48,7 @@ public final class SGSetupSession implements Listener {
     private boolean listeningForMeta = false;
     private boolean waitingForChests = false;
     private boolean listeningForDMSetup = false;
+    private boolean listeningForDMCancel = false;
 
     private Point p1;
 
@@ -55,21 +56,22 @@ public final class SGSetupSession implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
         CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
         if (!onlinePlayer.equals(player)) return;
+        if (event.getAction() == Action.PHYSICAL) return;
         if (event.getPlayer().getItemInHand() != null && event.getPlayer().getItemInHand().getType() != Material.DIAMOND_HOE) return;
         event.setCancelled(true);
         if (waitingForChests) return;
         Point point = player.getPoint();
         if (cornicopiaPoints.size() < 24) {
             for (Point cornicopiaPoint : cornicopiaPoints) {
-                if (cornicopiaPoint.equals(point)) {
+                if (cornicopiaPoint.getX().equals(point.getX()) && cornicopiaPoint.getY().equals(point.getY()) && cornicopiaPoint.getZ().equals(point.getZ())) {
                     player.playSoundForPlayer(Sound.NOTE_PLING, 1f, 0.5f);
                     player.sendMessage(SurvivalGames.getInstance().getFormat("setup.point-same"));
                     return;
                 }
             }
             cornicopiaPoints.add(point);
-            player.sendMessage(SurvivalGames.getInstance().getFormat("setup.cornicopia-point-next"));
-            if(cornicopiaPoints.size() == 24) player.sendMessage(SurvivalGames.getInstance().getFormat("setup.region-select"));
+            if (cornicopiaPoints.size() == 24) player.sendMessage(SurvivalGames.getInstance().getFormat("setup.region-select"));
+            else player.sendMessage(SurvivalGames.getInstance().getFormat("setup.cornicopia-point-next"));
         } else if (mapRegion == null) {
             if (event.getAction() != Action.RIGHT_CLICK_BLOCK && event.getAction() != Action.LEFT_CLICK_BLOCK) return;
             if (p1 == null) {
@@ -78,20 +80,24 @@ public final class SGSetupSession implements Listener {
             } else {
                 player.sendMessage(SurvivalGames.getInstance().getFormat("setup.point-selected"));
                 mapRegion = new Region(p1, Point.of(event.getClickedBlock()));
+                player.sendMessage(SurvivalGames.getInstance().getFormat("setup.region-selected"));
                 setupChests();
             }
         } else if (deathmatchSpawn.size() < 24) {
             for (Point cornicopiaPoint : deathmatchSpawn) {
-                if (cornicopiaPoint.equals(point)) {
+                if (cornicopiaPoint.getX().equals(point.getX()) && cornicopiaPoint.getY().equals(point.getY()) && cornicopiaPoint.getZ().equals(point.getZ())) {
                     player.playSoundForPlayer(Sound.NOTE_PLING, 1f, 0.5f);
                     player.sendMessage(SurvivalGames.getInstance().getFormat("setup.point-same"));
                     return;
                 }
             }
             deathmatchSpawn.add(point);
+            listeningForDMSetup = false;
+            listeningForDMCancel = true;
             if (deathmatchSpawn.size() == 24) {
                 player.sendMessage(SurvivalGames.getInstance().getFormat("setup.start-name"));
                 listeningForMeta = true;
+                listeningForDMCancel = false;
             }
             else player.sendMessage(SurvivalGames.getInstance().getFormat("setup.select-deathmatch"));
         }
@@ -123,7 +129,12 @@ public final class SGSetupSession implements Listener {
                 listeningForMeta = false;
                 storeArena();
             }
+        }  else if (deathmatchSpawn.size() > 0 && listeningForDMCancel && event.getMessage().equalsIgnoreCase("done")) {
+            player.sendMessage(SurvivalGames.getInstance().getFormat("setup.start-name"));
+            listeningForMeta = true;
         }
+        else return;
+        event.setCancelled(true);
     }
 
     private void storeArena() {
@@ -133,6 +144,7 @@ public final class SGSetupSession implements Listener {
         SurvivalGames.getInstance().getMapManager().saveMap(sgMap);
         player.sendMessage(SurvivalGames.getInstance().getFormat("setup.save-complete"));
         player.playSoundForPlayer(Sound.LEVEL_UP, 1f, 1.3f);
+        SurvivalGames.getInstance().getSetupManager().setupComplete(this);
     }
 
     private void setupChests() {
@@ -144,6 +156,7 @@ public final class SGSetupSession implements Listener {
         waitingForChests = false;
         player.sendMessage(SurvivalGames.getInstance().getFormat("setup.chests-done", new String[]{"<count>", String.valueOf(tier1.size() + tier2.size() + cornicopiaChests.size())}));
         listeningForDMSetup = true;
+        player.sendMessage(SurvivalGames.getInstance().getFormat("setup.start-deathmatch"));
     }
 
     public void start() {
@@ -157,6 +170,7 @@ public final class SGSetupSession implements Listener {
         bukkitPlayer.getInventory().clear();
         player.giveItem(Material.DIAMOND_HOE);
         player.playSoundForPlayer(Sound.ORB_PICKUP, 1f, 1.4f);
+        player.sendMessage(SurvivalGames.getInstance().getFormat("setup.start-cornicopia"));
     }
 
     void cancel() {
@@ -173,7 +187,7 @@ public final class SGSetupSession implements Listener {
             Double maxX = SGSetupSession.this.mapRegion.getMax().getX(), maxZ = SGSetupSession.this.mapRegion.getMax().getZ();
             for (; x < Math.min(maxX, x + INCREMENT); x++) {
                 for (int y = 0; y < 256; y++) {
-                    for (int z = 0; z < maxZ; z++) {
+                    for (int z = mapRegion.getMin().getZ().intValue(); z < maxZ; z++) {
                         Block b = world.getBlockAt(x.intValue(), y, z);
                         if (b.getType() == Material.CHEST) {
                             Inventory inventory = ((Chest) b.getState()).getInventory();

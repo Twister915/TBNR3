@@ -6,7 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import net.cogzmc.core.player.CPlayer;
 import net.tbnr.dev.TBNRHub;
-import net.tbnr.dev.inventory.HubInventoryButton;
+import net.tbnr.dev.ControlledInventoryButton;
 import net.tbnr.dev.inventory.SettingUtils;
 import net.tbnr.dev.setting.PlayerSetting;
 import net.tbnr.dev.setting.PlayerSettingsManager;
@@ -19,7 +19,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Getter(AccessLevel.NONE)
-public class ToggleItem extends HubInventoryButton {
+public class ToggleItem extends ControlledInventoryButton {
     protected final PlayerSetting setting;
 
     @Override

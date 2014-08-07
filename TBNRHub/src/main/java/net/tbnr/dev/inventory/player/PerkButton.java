@@ -1,5 +1,6 @@
 package net.tbnr.dev.inventory.player;
 
+import net.cogzmc.core.effect.npc.ClickAction;
 import net.cogzmc.core.gui.InventoryButton;
 import net.cogzmc.core.gui.InventoryGraphicalInterface;
 import net.cogzmc.core.modular.command.EmptyHandlerException;
@@ -39,7 +40,7 @@ public final class PerkButton extends InventoryButton {
     }
 
     @Override
-    protected void onPlayerClick(CPlayer player) throws EmptyHandlerException {
+    protected void onPlayerClick(CPlayer player, ClickAction action) throws EmptyHandlerException {
         try {
             player.getCooldownManager().testCooldown(setting.name() + "_perk", 1L, TimeUnit.SECONDS);
         } catch (CooldownUnexpiredException e) {

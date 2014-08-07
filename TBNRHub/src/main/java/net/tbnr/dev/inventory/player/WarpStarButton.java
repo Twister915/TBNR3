@@ -3,6 +3,7 @@ package net.tbnr.dev.inventory.player;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import net.cogzmc.core.effect.npc.ClickAction;
 import net.cogzmc.core.gui.InventoryButton;
 import net.cogzmc.core.modular.command.EmptyHandlerException;
 import net.cogzmc.core.player.CPlayer;
@@ -40,7 +41,7 @@ public final class WarpStarButton extends InventoryButton {
     }
 
     @Override
-    protected void onPlayerClick(CPlayer player) throws EmptyHandlerException {
+    protected void onPlayerClick(CPlayer player, ClickAction action) throws EmptyHandlerException {
         Player bukkitPlayer = player.getBukkitPlayer();
         bukkitPlayer.teleport(warp.getPoint().getLocation(bukkitPlayer.getWorld()));
         player.playSoundForPlayer(Sound.ENDERMAN_TELEPORT, 1f, 0.7f);

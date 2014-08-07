@@ -72,11 +72,11 @@ public final class SGMongoMapManager {
         String name = getValueFrom(object, SGMapKeys.NAME, String.class);
         String author = getValueFrom(object, SGMapKeys.AUTHOR, String.class);
         String socialLink = getValueFrom(object, SGMapKeys.SOCIAL_LINK, String.class);
-        Set<Point> cornPoints = getPointsFrom(getListFor(getValueFrom(object, SGMapKeys.CORNICOPIA_SPAWN_POINTS, BasicDBList.class), DBObject.class));
-        Set<Point> tier1 = getPointsFrom(getListFor(getValueFrom(object, SGMapKeys.TIER_1_CHESTS, BasicDBList.class), DBObject.class));
-        Set<Point> tier2 = getPointsFrom(getListFor(getValueFrom(object, SGMapKeys.TIER_2_CHESTS, BasicDBList.class), DBObject.class));
-        Set<Point> cornChests = getPointsFrom(getListFor(getValueFrom(object, SGMapKeys.CORNICOPIA_CHESTS, BasicDBList.class), DBObject.class));
-        Set<Point> deathmatchSpawn = getPointsFrom(getListFor(getValueFrom(object, SGMapKeys.DEATHMATCH_SPAWN, BasicDBList.class), DBObject.class));
+        Set<Point> cornPoints = getPointsFrom((BasicDBList)object.get(SGMapKeys.CORNICOPIA_SPAWN_POINTS.toString()));
+        Set<Point> tier1 = getPointsFrom((BasicDBList)object.get(SGMapKeys.TIER_1_CHESTS.toString()));
+        Set<Point> tier2 = getPointsFrom((BasicDBList)object.get(SGMapKeys.TIER_2_CHESTS.toString()));
+        Set<Point> cornChests = getPointsFrom((BasicDBList)object.get(SGMapKeys.CORNICOPIA_CHESTS.toString()));
+        Set<Point> deathmatchSpawn = getPointsFrom((BasicDBList)object.get(SGMapKeys.DEATHMATCH_SPAWN.toString()));
         return new SGMap(mapByID, name, author, socialLink, cornPoints, tier1, tier2, cornChests, deathmatchSpawn);
     }
 
@@ -95,9 +95,10 @@ public final class SGMongoMapManager {
         return objectBuilder.get();
     }
 
-    private static Set<Point> getPointsFrom(Collection<DBObject> objects) {
+    private static Set<Point> getPointsFrom(BasicDBList objects) {
         Set<Point> objects1 = new HashSet<>();
-        for (DBObject object : objects) {
+        for (Object object1 : objects) {
+            BasicDBObject object = (BasicDBObject)object1;
             objects1.add(Point.of(
                     getNumFor(object, SGMapKeys.X),
                     getNumFor(object, SGMapKeys.Y),

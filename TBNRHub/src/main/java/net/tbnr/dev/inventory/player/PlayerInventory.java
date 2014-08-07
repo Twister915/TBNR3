@@ -4,8 +4,8 @@ import net.cogzmc.core.gui.InventoryGraphicalInterface;
 import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.hub.Hub;
 import net.tbnr.dev.TBNRHub;
-import net.tbnr.dev.inventory.HubInventory;
-import net.tbnr.dev.inventory.HubInventoryButton;
+import net.tbnr.dev.ControlledInventory;
+import net.tbnr.dev.ControlledInventoryButton;
 import net.tbnr.dev.setting.PlayerSetting;
 import net.tbnr.dev.setting.SettingChangeEvent;
 import org.bukkit.Bukkit;
@@ -16,7 +16,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-public final class PlayerInventory extends HubInventory implements Listener {
+public final class PlayerInventory extends ControlledInventory implements Listener {
     private final static PlayerSetting[] perks = new PlayerSetting[]{PlayerSetting.JUMP_BOOST, PlayerSetting.RAINBOW_PARTICLE_EFFECT, PlayerSetting.FLY_IN_HUB};
 
     public PlayerInventory() {
@@ -41,10 +41,10 @@ public final class PlayerInventory extends HubInventory implements Listener {
     }
 
     @Override
-    protected HubInventoryButton getNewButtonAt(Integer slot) {
+    protected ControlledInventoryButton getNewButtonAt(Integer slot) {
         switch (slot) {
             case 0:
-                return new HubInventoryButton() {
+                return new ControlledInventoryButton() {
                     @Override
                     protected ItemStack getStack(CPlayer player) {
                         ItemStack stack = new ItemStack(Material.NETHER_STAR);
@@ -70,7 +70,7 @@ public final class PlayerInventory extends HubInventory implements Listener {
                 return new ToggleItem(PlayerSetting.SNOWBALL_GAME);
             case 6:
                 //Toggle chat
-                return new HubInventoryButton() {
+                return new ControlledInventoryButton() {
                     @Override
                     protected ItemStack getStack(CPlayer player) {
                         ItemStack stack = new ItemStack(Material.INK_SACK);
@@ -88,7 +88,7 @@ public final class PlayerInventory extends HubInventory implements Listener {
                 };
             case 8:
                 //Return to spawn
-                return new HubInventoryButton() {
+                return new ControlledInventoryButton() {
                     @Override
                     protected ItemStack getStack(CPlayer player) {
                         ItemStack itemStack = new ItemStack(Material.INK_SACK);

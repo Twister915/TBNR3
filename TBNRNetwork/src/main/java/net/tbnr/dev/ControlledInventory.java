@@ -1,4 +1,4 @@
-package net.tbnr.dev.inventory;
+package net.tbnr.dev;
 
 import lombok.Data;
 import net.cogzmc.core.Core;
@@ -14,7 +14,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
@@ -26,15 +25,15 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Data
-public abstract class HubInventory implements Listener, CPlayerConnectionListener {
-    private final Map<Integer, HubInventoryButton> buttons = new HashMap<>();
+public abstract class ControlledInventory implements Listener, CPlayerConnectionListener {
+    private final Map<Integer, ControlledInventoryButton> buttons = new HashMap<>();
     private final Set<CPlayer> players = new HashSet<>();
 
-    public HubInventory() {
+    public ControlledInventory() {
         reload();
     }
 
-    protected abstract HubInventoryButton getNewButtonAt(Integer slot);
+    protected abstract ControlledInventoryButton getNewButtonAt(Integer slot);
 
     @Override
     public final void onPlayerLogin(CPlayer player, InetAddress address) throws CPlayerJoinException {}
@@ -46,7 +45,7 @@ public abstract class HubInventory implements Listener, CPlayerConnectionListene
 
     public final void reload() {
         for (int i = 0; i < 36; i++) {
-            HubInventoryButton newButtonAt = getNewButtonAt(i);
+            ControlledInventoryButton newButtonAt = getNewButtonAt(i);
             if (newButtonAt == null) continue;
             buttons.put(i, newButtonAt);
         }
@@ -74,7 +73,7 @@ public abstract class HubInventory implements Listener, CPlayerConnectionListene
 
     protected void updateForPlayer(CPlayer player) {
         Player bukkitPlayer = player.getBukkitPlayer();
-        for (Map.Entry<Integer, HubInventoryButton> entry : buttons.entrySet()) {
+        for (Map.Entry<Integer, ControlledInventoryButton> entry : buttons.entrySet()) {
             bukkitPlayer.getInventory().setItem(entry.getKey(), entry.getValue().getStack(player));
         }
         bukkitPlayer.updateInventory();
@@ -103,19 +102,19 @@ public abstract class HubInventory implements Listener, CPlayerConnectionListene
     public final void onInteract(PlayerInteractEvent event) {
         if (event.getPlayer().getGameMode() == GameMode.CREATIVE) return;
         if (event.getAction() == Action.PHYSICAL) return;
-        HubInventoryButton hubInventoryButton = buttons.get(event.getPlayer().getInventory().getHeldItemSlot());
-        if (hubInventoryButton == null) return;
+        ControlledInventoryButton controlledInventoryButton = buttons.get(event.getPlayer().getInventory().getHeldItemSlot());
+        if (controlledInventoryButton == null) return;
         CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
         if (!players.contains(onlinePlayer)) return;
             try {
-            onlinePlayer.getCooldownManager().testCooldown((hubInventoryButton.hashCode() + "_inv"), 1L, TimeUnit.SECONDS);
+            onlinePlayer.getCooldownManager().testCooldown((controlledInventoryButton.hashCode() + "_inv"), 1L, TimeUnit.SECONDS);
         } catch (CooldownUnexpiredException e) {
             if (e.getTimeRemaining() > 800)
                 return;
             else //TODO make a sound and send a message.
                 return;
         }
-        hubInventoryButton.onUse(onlinePlayer);
+        controlledInventoryButton.onUse(onlinePlayer);
         updateForPlayer(onlinePlayer);
         event.setCancelled(true);
     }
@@ -138,7 +137,7 @@ public abstract class HubInventory implements Listener, CPlayerConnectionListene
     }
 
 
-    protected final Set<Map.Entry<Integer, HubInventoryButton>> getButtons() {
+    protected final Set<Map.Entry<Integer, ControlledInventoryButton>> getButtons() {
         return buttons.entrySet();
     }
 }

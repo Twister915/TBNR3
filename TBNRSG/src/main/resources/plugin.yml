@@ -1,0 +1,6 @@
+name: TBNRSG
+version: 1.0
+authors: [Twister915]
+main: net.tbnr.dev.sg.SurvivalGames
+description: SurvivalGames
+depend: [Core, TBNRNetwork]
