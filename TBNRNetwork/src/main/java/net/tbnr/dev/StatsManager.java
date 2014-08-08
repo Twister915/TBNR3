@@ -1,15 +1,16 @@
 package net.tbnr.dev;
 
+import net.cogzmc.core.player.COfflinePlayer;
 import net.cogzmc.core.player.CPlayer;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 
 public final class StatsManager {
-    public static <T> T getStat(Game game, Stat stat, CPlayer player, Class<T> clazz) {
+    public static <T> T getStat(Game game, Stat stat, COfflinePlayer player, Class<T> clazz) {
         return player.getSettingValue("stat_" + game.name() + "_" + stat.name(), clazz);
     }
 
-    public static void setStat(Game game, Stat stat, CPlayer player, Object value) {
+    public static void setStat(Game game, Stat stat, COfflinePlayer player, Object value) {
         player.storeSettingValue("stat_" + game.name() + "_" + stat.name(), value);
     }
 
