@@ -45,7 +45,6 @@ public final class HeightTracker implements Listener {
             settingsManager.setStateFor(PlayerSetting.FLY_IN_HUB, onlinePlayer, false);
         }
         catch (SettingChangeException e) {
-            SettingUtils.onSettingDeny(onlinePlayer);
             return;
         }
         SettingUtils.onSettingToggle(onlinePlayer, PlayerSetting.FLY_IN_HUB);

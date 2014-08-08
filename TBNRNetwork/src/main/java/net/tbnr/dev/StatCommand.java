@@ -12,9 +12,9 @@ import net.cogzmc.core.player.CPlayer;
  * @author Noy
  * @since 08/08/2014.
  */
-public class StatCommand extends ModuleCommand {
+public final class StatCommand extends ModuleCommand {
 
-    protected StatCommand() {
+    public StatCommand() {
         super("stats");
     }
 
@@ -31,7 +31,13 @@ public class StatCommand extends ModuleCommand {
                 sb.append(" ");
             }
             TBNRNetwork instance = TBNRNetwork.getInstance();
-            player.sendMessage(instance.getFormat("stat", new String[]{"<game>", sb.toString().trim()}));
+            player.sendMessage(instance.getFormat("stat.game", new String[]{"<game>", sb.toString().trim()}));
+            for (Stat stat : Stat.values()) {
+                Integer stat1 = StatsManager.getStat(game, stat, player, Integer.class);
+                StringBuilder builder = new StringBuilder(stat.name().toLowerCase());
+                builder.setCharAt(0, Character.toUpperCase(builder.charAt(0)));
+                player.sendMessage(instance.getFormat("stat.stat", new String[]{"<stat>", builder.toString()}, new String[]{"<value>", String.valueOf(stat1)}));
+            }
         }
     }
 }
