@@ -357,16 +357,17 @@ public final class SGGame implements Listener {
                     if (bukkitPlayer2.canSee(bukkitPlayer1)) bukkitPlayer2.hidePlayer(bukkitPlayer1);
                     bukkitPlayer1.hidePlayer(bukkitPlayer2);
                 }
+                try {
+                    Object handle = bukkitPlayer2.getClass().getMethod("getHandle").invoke(bukkitPlayer2);
+                    handle.getClass().getField("height").set(handle, 0f);
+                    handle.getClass().getField("width").set(handle, 0f);
+                    handle.getClass().getField("length").set(handle, 0f);
+                } catch (Exception e) {
+                    SurvivalGames.getInstance().logMessage(ChatColor.RED + "Unable to hide spectator from arrows!");
+                    e.printStackTrace();
+                }
             }
         }, 2L);
-        try {
-            Object handle = bukkitPlayer.getClass().getMethod("getHandle").invoke(bukkitPlayer);
-            handle.getClass().getField("height").set(handle, 0f);
-            handle.getClass().getField("width").set(handle, 0f);
-        } catch (Exception e) {
-            SurvivalGames.getInstance().logMessage(ChatColor.RED + "Unable to hide spectator from arrows!");
-            e.printStackTrace();
-        }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
