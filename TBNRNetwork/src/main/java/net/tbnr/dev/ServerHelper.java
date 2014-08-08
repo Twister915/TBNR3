@@ -71,4 +71,11 @@ public final class ServerHelper {
             if (current_status != null) sender.sendNetCommand(new ServerStatusNetCommand(current_status));
         }
     }
+
+    static class OfflineCommandHandlr implements NetCommandHandler<ServerOfflineNetCommand> {
+        @Override
+        public void handleNetCommand(NetworkServer sender, ServerOfflineNetCommand netCommand) {
+            statusMap.remove(sender.getName());
+        }
+    }
 }

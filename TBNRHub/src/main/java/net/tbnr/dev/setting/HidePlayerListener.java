@@ -23,9 +23,14 @@ public final class HidePlayerListener implements Listener {
             hidePlayersFor(onlinePlayer);
         }
         if (!shouldHidePlayer(onlinePlayer)) return;
-        Player bukkitPlayer = onlinePlayer.getBukkitPlayer();
-        for (CPlayer cPlayer : settingsManager.getOnlinePlayersWithSetting(PlayerSetting.PLAYERS, false)) {
-            cPlayer.getBukkitPlayer().hidePlayer(bukkitPlayer);
+        final Player bukkitPlayer = onlinePlayer.getBukkitPlayer();
+        for (final CPlayer cPlayer : settingsManager.getOnlinePlayersWithSetting(PlayerSetting.PLAYERS, false)) {
+            Bukkit.getScheduler().runTaskLater(TBNRHub.getInstance(), new Runnable() {
+                @Override
+                public void run() {
+                    cPlayer.getBukkitPlayer().hidePlayer(bukkitPlayer);
+                }
+            },2L);
         }
     }
 

@@ -19,6 +19,10 @@ import net.tbnr.dev.setting.HidePlayerListener;
 import net.tbnr.dev.setting.PlayerSettingsManager;
 import net.tbnr.dev.signs.ServerSignMatrixManager;
 import net.tbnr.dev.signs.SignSetupCommand;
+import net.tbnr.dev.spawn.SetSpawnCommand;
+import net.tbnr.dev.spawn.SpawnCommand;
+import net.tbnr.dev.spawn.SpawnManager;
+import org.bukkit.Bukkit;
 
 @ModuleMeta(description = "TBNR's Hub Plugin!", name = "TBNRHub")
 public final class TBNRHub extends ModularPlugin {
@@ -28,6 +32,7 @@ public final class TBNRHub extends ModularPlugin {
     @Getter private ParkourManager parkourManager;
     @Getter private WarpMongoRepository warpRepository;
     @Getter private ServerSignMatrixManager matrixManager;
+    @Getter private SpawnManager spawnManager;
 
     @Override
     protected void onModuleEnable() throws Exception {
@@ -40,6 +45,7 @@ public final class TBNRHub extends ModularPlugin {
         playerInventory = new PlayerInventory();
         matrixManager = new ServerSignMatrixManager((CMongoDatabase) Core.getInstance().getCDatabase());
         matrixManager.reload();
+        spawnManager = new SpawnManager(Bukkit.getWorlds().get(0), (CMongoDatabase) Core.getInstance().getCDatabase());
         registerAllCommands();
         registerAllListeners();
     }
@@ -47,6 +53,7 @@ public final class TBNRHub extends ModularPlugin {
     @Override
     protected void onModuleDisable() throws Exception {
         parkourManager.save();
+        spawnManager.onDisable();
     }
 
     private void registerAllCommands() {
@@ -54,6 +61,8 @@ public final class TBNRHub extends ModularPlugin {
         registerCommand(new ParkourCommand());
         registerCommand(new AddWarpCommand());
         registerCommand(new SignSetupCommand());
+        registerCommand(new SpawnCommand());
+        registerCommand(new SetSpawnCommand());
     }
 
     private void registerAllListeners() {

@@ -6,6 +6,7 @@ import net.cogzmc.hub.Hub;
 import net.tbnr.dev.TBNRHub;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -22,13 +23,16 @@ public final class PlayerGate implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        event.getPlayer().getInventory().clear();
-        CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
+        Player player = event.getPlayer();
+        player.getInventory().clear();
+        CPlayer onlinePlayer = Core.getOnlinePlayer(player);
         TBNRHub.getInstance().getPlayerInventory().setActive(onlinePlayer);
-        event.getPlayer().teleport(Hub.getInstance().getSpawnHandler().getSpawn());
-        event.getPlayer().setFoodLevel(20);
-        event.getPlayer().setHealth(20);
-        event.getPlayer().setGameMode(GameMode.SURVIVAL);
+        player.teleport(TBNRHub.getInstance().getSpawnManager().getSpawn());
+        player.setFoodLevel(20);
+        player.setHealth(20);
+        player.setGameMode(GameMode.SURVIVAL);
+        player.getInventory().setHeldItemSlot(4);
+        Core.getOnlinePlayer(player).clearChatAll();
         //TODO setup scoreboard
     }
 }

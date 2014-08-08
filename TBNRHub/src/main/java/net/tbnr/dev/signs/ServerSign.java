@@ -11,6 +11,8 @@ import net.tbnr.dev.ServerHelper;
 import org.bukkit.ChatColor;
 import org.bukkit.block.Sign;
 
+import java.util.regex.Pattern;
+
 @Data
 @EqualsAndHashCode(of = {"point"})
 @Setter(AccessLevel.NONE)
@@ -42,9 +44,10 @@ public final class ServerSign {
         for (String s : matrix.getGame().name().split("_")) {
             builder.append(Character.toUpperCase(s.toCharArray()[0]));
         }
-        sign.setLine(1, $("&2" + builder.toString()));
+        Integer serverNumber = ServerSignMatrix.getServerNumber(server);
+        sign.setLine(1, $("&2" + builder.toString() + " - " + serverNumber));
         SignState aFor = SignState.getFor(status);
-        sign.setLine(2, $("&2[" + aFor.color + aFor.name().toUpperCase() + "&2]"));
+        sign.setLine(2, $("" + aFor.color + aFor.name().toUpperCase()+ ""));
         sign.setLine(3, $("&a" + server.getOnlineCount() + "&2/&a" + matrix.getGame().getMaxPlayers()));
         sign.update(true);
         currentlyDisplaying = server;

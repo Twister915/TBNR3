@@ -18,7 +18,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 public final class PlayerInventory extends ControlledInventory implements Listener {
-    private final static PlayerSetting[] perks = new PlayerSetting[]{PlayerSetting.JUMP_BOOST, PlayerSetting.RAINBOW_PARTICLE_EFFECT, PlayerSetting.FLY_IN_HUB};
+    private final static PlayerSetting[] perks = new PlayerSetting[]{PlayerSetting.RAINBOW_PARTICLE_EFFECT, PlayerSetting.FLY_IN_HUB};
 
     public PlayerInventory() {
         Bukkit.getPluginManager().registerEvents(this, TBNRHub.getInstance());
@@ -57,7 +57,7 @@ public final class PlayerInventory extends ControlledInventory implements Listen
     @Override
     protected ControlledInventoryButton getNewButtonAt(Integer slot) {
         switch (slot) {
-            case 0:
+            case 4:
                 return new ControlledInventoryButton() {
                     @Override
                     protected ItemStack getStack(CPlayer player) {
@@ -76,12 +76,12 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                         }
                     }
                 };
-            case 2:
+            case 0:
                 //Hide players
                 return new ToggleItem(PlayerSetting.PLAYERS);
-            case 4:
-                //Toggle snowball game
-                return new ToggleItem(PlayerSetting.SNOWBALL_GAME);
+            case 2:
+                //Toggle jump boost
+                return new ToggleItem(PlayerSetting.JUMP_BOOST);
             case 6:
                 //Toggle chat
                 return new ControlledInventoryButton() {
@@ -115,7 +115,7 @@ public final class PlayerInventory extends ControlledInventory implements Listen
 
                     @Override
                     protected void onUse(CPlayer player) {
-                        Hub.getInstance().getSpawnHandler().sendToSpawn(player.getBukkitPlayer());
+                        TBNRHub.getInstance().getSpawnManager().teleportToSpawn(player);
                     }
                 };
         }

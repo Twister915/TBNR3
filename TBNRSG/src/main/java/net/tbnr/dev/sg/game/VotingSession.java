@@ -49,7 +49,10 @@ public final class VotingSession {
         SGMap votedFor = null;
         Integer mostVotes = 0;
         for (Map.Entry<SGMap, Integer> sgMapIntegerEntry : mapVotes.entrySet()) {
-            if (sgMapIntegerEntry.getValue() > mostVotes) votedFor = sgMapIntegerEntry.getKey();
+            if (sgMapIntegerEntry.getValue() > mostVotes) {
+                mostVotes = sgMapIntegerEntry.getValue();
+                votedFor = sgMapIntegerEntry.getKey();
+            }
         }
         return votedFor == null ? mapSelection.iterator().next() : votedFor;
     }

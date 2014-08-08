@@ -39,23 +39,6 @@ public final class HeightTracker implements Listener {
         if (event.getTo().getY() < maxHeight) return;
         Player player = event.getPlayer();
         if (player.hasPermission("hub.bypass-height")) return;
-        final CPlayer onlinePlayer = Core.getOnlinePlayer(player);
-        final PlayerSettingsManager settingsManager = TBNRHub.getInstance().getSettingsManager();
-        try {
-            settingsManager.setStateFor(PlayerSetting.FLY_IN_HUB, onlinePlayer, false);
-        }
-        catch (SettingChangeException e) {
-            return;
-        }
-        SettingUtils.onSettingToggle(onlinePlayer, PlayerSetting.FLY_IN_HUB);
-        settingsManager.lockSetting(PlayerSetting.FLY_IN_HUB, onlinePlayer);
-        Bukkit.getScheduler().runTaskLater(TBNRHub.getInstance(), new Runnable() {
-            @Override
-            public void run() {
-                if (onlinePlayer.isOnline() && TBNRHub.getInstance().getParkourManager().getParkourFor(onlinePlayer) == null) {
-                    settingsManager.unlockSetting(PlayerSetting.FLY_IN_HUB, onlinePlayer);
-                }
-            }
-        }, 40L);
+        TBNRHub.getInstance().getSpawnManager().teleportToSpawn(Core.getOnlinePlayer(event.getPlayer()));
     }
 }

@@ -15,7 +15,6 @@ public enum PlayerSetting {
             else HidePlayerListener.unHidePlayersFor(target);
         }
     }, "Hides players (when off) from your view.", "Does not hide staff members."),
-    SNOWBALL_GAME("snowball_game", "Snowball Mini-Game", true, "Disables you from being hit", "or throwing snowballs"),
     FLY_IN_HUB("fly_in_hub", "Flight", false, "hub.perk.flight", new SettingChangeObserver() {
         @Override
         public void settingChanged(boolean value, CPlayer target) {
@@ -44,15 +43,6 @@ public enum PlayerSetting {
     final SettingChangeObserver observer;
     final Boolean defaultValue;
     final String permission;
-
-    PlayerSetting(String key, String name, Boolean defaultValue, String... description) {
-        this.settingKey = key;
-        this.defaultValue = defaultValue;
-        this.observer = null;
-        this.name = name;
-        this.description = Arrays.asList(description);
-        this.permission = null;
-    }
 
     PlayerSetting(String key, String name, Boolean defaultValue, SettingChangeObserver observer, String... description) {
         this.settingKey = key;

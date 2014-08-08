@@ -46,7 +46,7 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 
 public final class SGGame implements Listener {
-    private final static Integer DEFAULT_POINTS = 100;
+    private final static Integer DEFAULT_POINTS = (Integer) Stat.POINTS.defaultValue;
 
     private final ControlledInventory spectatorInventory = new ControlledInventory() {
         {
@@ -318,6 +318,7 @@ public final class SGGame implements Listener {
     }
 
     void removeTribute(@NonNull CPlayer player) {
+        if (!tributes.contains(player)) return;
         tributes.remove(player);
         for (InventoryButton inventoryButton : spectatorGUI.getButtons()) {
             if (((TributeButton) inventoryButton).tribute.equals(player)) {
@@ -329,7 +330,7 @@ public final class SGGame implements Listener {
         broadcastMessage(SurvivalGames.getInstance().getFormat("tributes-remain", new String[]{"<tributes>", String.valueOf(tributes.size())}));
     }
 
-    public void makeSpectator(CPlayer player) {
+    public void makeSpectator(final CPlayer player) {
         spectators.add(player);
         player.resetPlayer();
         Player bukkitPlayer = player.getBukkitPlayer();
@@ -344,14 +345,20 @@ public final class SGGame implements Listener {
         player.playSoundForPlayer(Sound.AMBIENCE_RAIN, 1f, 1.2f);
         spectatorInventory.setActive(player);
         spectatorInventory.updateItems();
-        for (CPlayer tribute : tributes) {
-            tribute.getBukkitPlayer().hidePlayer(bukkitPlayer);
-        }
-        for (CPlayer spectator : spectators) {
-            Player bukkitPlayer1 = spectator.getBukkitPlayer();
-            if (bukkitPlayer.canSee(bukkitPlayer1)) bukkitPlayer.hidePlayer(bukkitPlayer1);
-            bukkitPlayer1.hidePlayer(bukkitPlayer);
-        }
+        Bukkit.getScheduler().runTaskLater(SurvivalGames.getInstance(), new Runnable() {
+            @Override
+            public void run() {
+                Player bukkitPlayer2 = player.getBukkitPlayer();
+                for (CPlayer tribute : tributes) {
+                    tribute.getBukkitPlayer().hidePlayer(bukkitPlayer2);
+                }
+                for (CPlayer spectator : spectators) {
+                    Player bukkitPlayer1 = spectator.getBukkitPlayer();
+                    if (bukkitPlayer2.canSee(bukkitPlayer1)) bukkitPlayer2.hidePlayer(bukkitPlayer1);
+                    bukkitPlayer1.hidePlayer(bukkitPlayer2);
+                }
+            }
+        }, 2L);
         try {
             Object handle = bukkitPlayer.getClass().getMethod("getHandle").invoke(bukkitPlayer);
             handle.getClass().getField("height").set(handle, 0f);

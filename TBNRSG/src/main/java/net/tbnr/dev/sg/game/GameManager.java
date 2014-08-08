@@ -56,7 +56,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
             public void run() {
                 if (Core.getNetworkManager() != null) ServerHelper.setStatus(PRE_GAME_STATUS);
             }
-        }, 10L);
+        }, 40L);
     }
 
     private void startTimer() {

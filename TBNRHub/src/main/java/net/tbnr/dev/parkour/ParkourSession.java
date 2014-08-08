@@ -6,6 +6,7 @@ import lombok.ToString;
 import net.cogzmc.core.Core;
 import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.core.util.Point;
+import net.cogzmc.core.util.TimeUtils;
 import net.tbnr.dev.TBNRHub;
 import net.tbnr.dev.inventory.SettingUtils;
 import net.tbnr.dev.setting.PlayerSetting;
@@ -22,10 +23,7 @@ import org.joda.time.Duration;
 import org.joda.time.Instant;
 import org.joda.time.format.PeriodFormatterBuilder;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @EqualsAndHashCode
 @ToString
@@ -35,7 +33,7 @@ public final class ParkourSession implements Listener {
     @Getter private final Parkour parkour;
     private final ParkourManager manager;
 
-    private Map<PlayerSetting, Boolean> previousValues = new HashMap<>();
+    private Map<PlayerSetting, Boolean> previousValues = new LinkedHashMap<>();
 
     private ParkourLevel lastLevel;
     private ParkourLevel level;
@@ -89,7 +87,6 @@ public final class ParkourSession implements Listener {
                 if (completedWithinTargetTime) {
                     player.playSoundForPlayer(Sound.LEVEL_UP, 1f, 0.8F);
                     player.sendMessage(TBNRHub.getInstance().getFormat("parkour-target-time"));
-                    //TODO snowball mini-game addition
                 }
                 if (timerTask != null) timerTask.cancel();
                 timerTask = null;
@@ -104,8 +101,7 @@ public final class ParkourSession implements Listener {
                 levelNumber++;
                 nextLevel = getNextLevel();
                 player.sendMessage(TBNRHub.getInstance().getFormat("parkour-level-begin", new String[]{"<level>", String.valueOf(levelNumber)}));
-                String print = new PeriodFormatterBuilder().appendMinutes().appendSuffix(":").appendSeconds().toFormatter().print(level.getTargetDuration().toPeriod());
-                player.sendMessage(TBNRHub.getInstance().getFormat("parkour-time-info", new String[]{"<duration>", print}));
+                player.sendMessage(TBNRHub.getInstance().getFormat("parkour-time-info", new String[]{"<duration>", TimeUtils.formatDurationNicely(level.getTargetDuration())}));
                 player.playSoundForPlayer(Sound.ORB_PICKUP, 1f, 1.2f);
                 hitBlocks = new ArrayList<>();
                 levelStart = new Instant();
@@ -162,11 +158,25 @@ public final class ParkourSession implements Listener {
     }
 
     private void endParkour() {
-        //TODO send feedback for parkour
+        player.sendMessage(TBNRHub.getInstance().getFormat("parkour-end"));
+        for (Map.Entry<ParkourLevel, Duration> parkourLevelDurationEntry : levelTimes.entrySet()) {
+            player.sendMessage(TBNRHub.getInstance().getFormat("parkour-level-stat",
+                    new String[]{"<lnumber>", String.valueOf(parkour.getLevels().indexOf(parkourLevelDurationEntry.getKey())+1)},
+                    new String[]{"<ltime>", TimeUtils.formatDurationNicely(parkourLevelDurationEntry.getValue())}
+            ));
+        }
+        player.playSoundForPlayer(Sound.FIREWORK_LARGE_BLAST, 1f, 1.2f);
+        player.sendMessage(TBNRHub.getInstance().getFormat("parkour-end-teleport"));
         cleanupParkour();
+        Bukkit.getScheduler().runTaskLater(TBNRHub.getInstance(), new Runnable() {
+            @Override
+            public void run() {
+                if (player.isOnline()) TBNRHub.getInstance().getSpawnManager().teleportToSpawn(player);
+            }
+        }, 40L);
     }
 
-    void cleanupParkour() {
+    public void cleanupParkour() {
         if (timerTask != null) timerTask.cancel();
         for (Map.Entry<PlayerSetting, Boolean> playerSettingBooleanEntry : previousValues.entrySet()) {
             PlayerSettingsManager settingsManager = TBNRHub.getInstance().getSettingsManager();
@@ -187,7 +197,6 @@ public final class ParkourSession implements Listener {
         toggleSetting(PlayerSetting.FLY_IN_HUB, false);
         toggleSetting(PlayerSetting.PLAYERS, false);
         toggleSetting(PlayerSetting.JUMP_BOOST, false);
-        toggleSetting(PlayerSetting.SNOWBALL_GAME, false);
         TBNRHub.getInstance().registerListener(this);
     }
 

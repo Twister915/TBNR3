@@ -4,7 +4,7 @@ import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
 import net.cogzmc.core.util.Point;
 
-public class MongoToolsHub {
+public final class MongoToolsHub {
     private static final String X = "x";
     private static final String Y = "y";
     private static final String Z = "z";

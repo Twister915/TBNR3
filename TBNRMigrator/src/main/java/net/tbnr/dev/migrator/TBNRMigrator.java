@@ -1,16 +1,15 @@
 package net.tbnr.dev.migrator;
 
-import com.mongodb.BasicDBList;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
-import com.mongodb.MongoClientURI;
+import com.mongodb.*;
 import net.cogzmc.core.player.CGroup;
 import net.cogzmc.core.player.COfflinePlayer;
 import net.cogzmc.core.player.DatabaseConnectException;
 import net.cogzmc.core.player.mongo.CMongoDatabase;
 import net.cogzmc.core.player.mongo.CMongoGroupRepository;
 import net.cogzmc.core.player.mongo.CMongoPlayerRepository;
+import net.cogzmc.core.player.mongo.COfflineMongoPlayer;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -39,63 +38,93 @@ public class TBNRMigrator {
     }
 
     public void start() throws DatabaseConnectException {
-        DBCollection permPlayers = source.getCollection("permplayers");
-        DBCollection permGroups = source.getCollection("permgroups");
-        Map<String, CGroup> newBindings = new HashMap<>();
-        Map<CGroup, DBObject> oldBindings = new HashMap<>();
-        for (DBObject dbObject : permGroups.find()) {
-            CGroup name = target.getGroupRepository().createNewGroup((String) dbObject.get("name"));
-            name.setTablistColor((String) dbObject.get("tabcolor"));
-            name.setChatPrefix((String) dbObject.get("prefix"));
-            for (Object permission : ((BasicDBList) dbObject.get("permissions"))) {
-                String[] split = ((String) permission).split(",");
-                name.setPermission(split[0], Boolean.valueOf(split[1]));
-            }
-            newBindings.put(name.getName(), name);
-            oldBindings.put(name, dbObject);
-        }
-        for (CGroup cGroup : oldBindings.keySet()) {
-            DBObject dbObject = oldBindings.get(cGroup);
-            BasicDBList inheritances = (BasicDBList) dbObject.get("inheritances");
-            for (Object inheritance : inheritances) {
-                cGroup.addParent(newBindings.get(inheritance));
-            }
-        }
-        target.getGroupRepository().setDefaultGroup(newBindings.get("Player"));
-        target.getGroupRepository().save();
-        for (DBObject dbObject : permPlayers.find()) {
-            COfflinePlayer player;
-            try {
-                player = target.getOfflinePlayerByUUID(UUID.fromString((String) dbObject.get("uuid")));
-            } catch (Exception e) {
-                String uuid = ((String) dbObject.get("uuid")).replaceAll(
-                        "(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})",
-                        "$1-$2-$3-$4-$5");
+        DBCollection permplayers = source.getCollection("permplayers");
+        Map<String, CGroup> migrateTo = new HashMap<>();
+        migrateTo.put("TBNR", target.getGroupRepository().getGroup("TBNR"));
+        migrateTo.put("Hero", target.getGroupRepository().getGroup("Hero"));
+        migrateTo.put("Premium", target.getGroupRepository().getGroup("Premium"));
+        migrateTo.put("JrMod", target.getGroupRepository().getGroup("JrModerator"));
+        migrateTo.put("Mod", target.getGroupRepository().getGroup("Moderator"));
+        migrateTo.put("JrAdmin", target.getGroupRepository().getGroup("Admin"));
+        migrateTo.put("Admin", target.getGroupRepository().getGroup("Admin"));
+        migrateTo.put("Owner", target.getGroupRepository().getGroup("Owner"));
+        migrateTo.put("Youtuber", target.getGroupRepository().getGroup("VIP"));
+
+        int migrations = 0;
+        for (Map.Entry<String, CGroup> migration : migrateTo.entrySet()) {
+            for (DBObject player : permplayers.find(new BasicDBObject("group", migration.getKey()))) {
+                UUID uuid;
+                String uuid1 = (String) player.get("uuid");
                 try {
-                    player = target.getOfflinePlayerByUUID(UUID.fromString(uuid));
-                } catch (Exception e2) {
-                    System.err.println("Could not transition " + dbObject.get("uuid"));
-                    e2.printStackTrace();
+                    uuid = UUID.fromString(uuid1);
+                } catch (Exception e) {
+                    try {
+                        uuid = UUID.fromString(uuid1.replaceAll(
+                                "(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})",
+                                "$1-$2-$3-$4-$5"));
+                    } catch (Exception e1) {
+                        continue;
+                    }
+                }
+                COfflinePlayer offlinePlayerByUUID = target.getOfflinePlayerByUUID(uuid);
+                if (!offlinePlayerByUUID.isDirectlyInGroup(migration.getValue())) offlinePlayerByUUID.addToGroup(migration.getValue());
+                offlinePlayerByUUID.saveIntoDatabase();
+                migrations++;
+            }
+        }
+
+        System.out.println("Migrated " + migrations + " ranks.");
+
+        migrations = 0;
+        for (DBObject player : permplayers.find(new BasicDBObject("permissions", "gearz.flight,true"))) {
+            UUID uuid;
+            String uuid1 = (String) player.get("uuid");
+            try {
+                uuid = UUID.fromString(uuid1);
+            } catch (Exception e) {
+                try {
+                    uuid = UUID.fromString(uuid1.replaceAll(
+                            "(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})",
+                            "$1-$2-$3-$4-$5"));
+                } catch (Exception e1) {
                     continue;
                 }
             }
-            CGroup group = newBindings.get(dbObject.get("group"));
-            BasicDBList permissions = (BasicDBList) dbObject.get("permissions");
-            boolean b = target.getGroupRepository().isDefaultGroup(group);
-            if (b && permissions.size() == 0) continue;
-            if (!b) player.addToGroup(group);
-            for (Object permissionRaw : permissions) {
-                String[] split = ((String) permissionRaw).split(",");
-                String permission = split[0];
-                Boolean value = split.length < 2 ? true : Boolean.valueOf(split[1]);
-                if (permission.equals("gearz.flight") || permission.equals("gearz.fly")) {
-                    player.setPermission("hub.perk.flight", value);
-                } else {
-                    player.setPermission(permission, value);
+            COfflinePlayer offlinePlayerByUUID = target.getOfflinePlayerByUUID(uuid);
+            offlinePlayerByUUID.setPermission("hub.perk.flight", true);
+            offlinePlayerByUUID.saveIntoDatabase();
+            migrations++;
+        }
+
+        System.out.println("Migrated " + migrations + " fly perms.");
+
+        migrations = 0;
+        for (DBObject dbObject : source.getCollection("users").find(new BasicDBObject("time-online", new BasicDBObject("$gt", 21600000)))) {
+            UUID uuid;
+            String uuid1 = (String) dbObject.get("uuid");
+            try {
+                uuid = UUID.fromString(uuid1);
+            } catch (Exception e) {
+                try {
+                    uuid = UUID.fromString(uuid1.replaceAll(
+                            "(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})",
+                            "$1-$2-$3-$4-$5"));
+                } catch (Exception e1) {
+                    continue;
                 }
             }
-            player.saveIntoDatabase();
+            COfflineMongoPlayer offlinePlayerByUUID = target.getOfflinePlayerByUUID(uuid);
+            try {
+                Field millisecondsOnline = offlinePlayerByUUID.getClass().getDeclaredField("millisecondsOnline");
+                millisecondsOnline.setAccessible(true);
+                millisecondsOnline.set(offlinePlayerByUUID, dbObject.get("time-online"));
+            } catch (Exception e) {
+                continue;
+            }
+            offlinePlayerByUUID.saveIntoDatabase();
+            migrations++;
         }
+        System.out.println("Migrated " + migrations + " online time.");
     }
 
     private static CMongoDatabase getDatabaseFor(String arg, String db) {
