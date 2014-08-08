@@ -13,10 +13,7 @@ import net.cogzmc.core.player.mongo.CMongoDatabase;
 import net.cogzmc.core.util.Point;
 import net.tbnr.dev.sg.game.PreGameLobby;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static net.cogzmc.core.player.mongo.MongoUtils.getValueFrom;
 
@@ -62,8 +59,8 @@ public final class SGMongoMapManager {
         database.getCollection(MAPS_COLLECTION).save(objectForPreGameLobby(lobby));
     }
 
-    public Iterable<SGMap> getRandomMaps(Integer size) {
-        Set<SGMap> maps = new HashSet<>();
+    public List<SGMap> getRandomMaps(Integer size) {
+        List<SGMap> maps = new ArrayList<>();
         ImmutableList<SGMap> maps1 = getMaps().asList();
         while (maps.size() < size) {
             SGMap map;

@@ -2,6 +2,7 @@ package net.tbnr.dev;
 
 import lombok.Data;
 import net.cogzmc.core.Core;
+import net.cogzmc.core.gui.InventoryButton;
 import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.core.player.CPlayerConnectionListener;
 import net.cogzmc.core.player.CPlayerJoinException;

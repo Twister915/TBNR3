@@ -2,6 +2,7 @@ package net.tbnr.dev.sg.game.loots;
 
 import lombok.Data;
 import net.cogzmc.core.Core;
+import net.cogzmc.util.RandomUtils;
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
 import org.bukkit.inventory.Inventory;
@@ -53,15 +54,19 @@ public final class Tier {
         int mDelta = max - min;
         int amt = min + Core.getRandom().nextInt(mDelta+1);
         TierEntry[] tierEntries = entrySet.toArray(new TierEntry[entrySet.size()]);
+        TierEntry[] tierEntriesAdd = new TierEntry[amt];
         for (int i = 0; i < amt; i++) {
             TierEntry entry = null;
             do {
                 TierEntry tierEntry = tierEntries[Core.getRandom().nextInt(tierEntries.length)];
+                if (RandomUtils.contains(tierEntriesAdd, tierEntry)) continue;
                 float v = Core.getRandom().nextFloat();
                 if (tierEntry.probability > v) entry = tierEntry;
             } while (entry == null);
-            int i1 = Core.getRandom().nextInt(inventory.getSize());
-            inventory.setItem(i1, new ItemStack(entry.material, entry.quantity, entry.dataValue));
+            tierEntriesAdd[i] = entry;
+        }
+        for (TierEntry tierEntry : tierEntriesAdd) {
+            inventory.setItem(Core.getRandom().nextInt(inventory.getSize()), new ItemStack(tierEntry.material, tierEntry.quantity, tierEntry.dataValue));
         }
     }
 

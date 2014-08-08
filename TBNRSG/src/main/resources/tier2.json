@@ -1,10 +1,111 @@
 {
-    "min_items" : 2,
-    "max_items" : 5,
+    "min_items" : 4,
+    "max_items" : 6,
     "entries" : [
         {
             "material" : "FISHING_ROD",
-            "probability" : 1
+            "probability" : 0.3
+        },
+        {
+            "material" : "COOKED_BEEF",
+            "probability" : 0.4
+        },
+        {
+            "material" : "COOKED_FISH",
+            "probability" : 0.5
+        },
+        {
+            "material" : "GRILLED_PORK",
+            "probability" : 0.4
+        },
+        {
+            "material" : "DIAMOND",
+            "probability" : 0.1
+        },
+        {
+            "material" : "IRON_INGOT",
+            "probability" : 0.5
+        },
+        {
+            "material" : "IRON_LEGGINGS",
+            "probability" : 0.3
+        },
+        {
+            "material" : "IRON_HELMET",
+            "probability" : 0.3
+        },
+        {
+            "material" : "IRON_CHESTPLATE",
+            "probability" : 0.3
+        },
+        {
+            "material" : "IRON_BOOTS",
+            "probability" : 0.3
+        },
+        {
+            "material" : "STONE_SWORD",
+            "probability" : 0.5
+        },
+        {
+            "material" : "MUSHROOM_SOUP",
+            "probability" : 0.5
+        },
+        {
+            "material" : "COOKED_CHICKEN",
+            "probability" : 0.5
+        },
+        {
+            "material" : "CHAINMAIL_HELMET",
+            "probability" : 0.5
+        },
+        {
+            "material" : "CHAINMAIL_CHESTPLATE",
+            "probability" : 0.5
+        },
+        {
+            "material" : "CHAINMAIL_LEGGINGS",
+            "probability" : 0.5
+        },
+        {
+            "material" : "CHAINMAIL_BOOTS",
+            "probability" : 0.5
+        },
+        {
+            "material" : "IRON_AXE",
+            "probability" : 0.5
+        },
+        {
+            "material" : "STICK",
+            "probability" : 0.5
+        },
+        {
+            "material" : "GOLDEN_APPLE",
+            "probability" : 0.2
+        },
+        {
+            "material" : "CAKE",
+            "probability" : 0.4
+        },
+        {
+            "material" : "PUMPKIN_PIE",
+            "probability" : 0.5
+        },
+        {
+            "material" : "FLINT_AND_STEEL",
+            "probability" : 0.5
+        },
+        {
+            "material" : "ARROW",
+            "probability" : 0.8,
+            "quantity" : 5
+        },
+        {
+            "material" : "BOW",
+            "probability" : 0.6
+        },
+        {
+            "material" : "GOLDEN_CARROT",
+            "probability" : 0.5
         }
     ]
 }

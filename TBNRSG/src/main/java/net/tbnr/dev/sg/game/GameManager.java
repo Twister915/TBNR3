@@ -26,6 +26,10 @@ import java.net.InetAddress;
 import java.util.Iterator;
 
 public final class GameManager implements Listener, CPlayerConnectionListener {
+    private final static String PRE_GAME_STATUS = "pre_game";
+    private final static String IN_GAME_STATUS = "in_game";
+    private final static String GAME_OVER_STATUS = "game_over";
+
     @Getter private SGGame runningGame = null;
     @Getter public PreGameLobby preGameLobby;
     private final PreGameListener listener;
@@ -47,10 +51,16 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
         votingSession = new VotingSession(SurvivalGames.getInstance().getMapManager().getRandomMaps(5));
         SurvivalGames.getInstance().registerCommand(new VoteCommand());
         startTimer();
+        Bukkit.getScheduler().runTaskLater(SurvivalGames.getInstance(), new Runnable() {
+            @Override
+            public void run() {
+                if (Core.getNetworkManager() != null) ServerHelper.setStatus(PRE_GAME_STATUS);
+            }
+        }, 10L);
     }
 
     private void startTimer() {
-        gameTimer = new Timer(60, new GameStartTimer()).start();
+        gameTimer = new Timer(120, new GameStartTimer()).start();
     }
 
     private Point getNextSpawnPoint() {
@@ -61,6 +71,8 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
+        onlinePlayer.clearChatAll();
         if (runningGame != null) {
             player.teleport(runningGame.getMap().getCornicopiaSpawnPoints().iterator().next().getLocation(runningGame.getWorld()));
             runningGame.makeSpectator(Core.getOnlinePlayer(player));
@@ -68,11 +80,8 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
         }
         player.teleport(getNextSpawnPoint().getLocation(preGameLobby.getMap().getWorld()));
         event.setJoinMessage(SurvivalGames.getInstance().getFormat("join-message", new String[]{"<player>", Core.getOnlinePlayer(player).getDisplayName()}));
-        player.sendMessage(SurvivalGames.getInstance().getFormat("voting-options.header"));
-        for (SGMap sgMap : votingSession.getMapSelection()) {
-            player.sendMessage(SurvivalGames.getInstance().getFormat("voting-options.map-line", new String[]{"<name>", sgMap.getName()}, new String[]{"<authors>", sgMap.getAuthor()}));
-        }
-        Core.getOnlinePlayer(event.getPlayer()).resetPlayer();
+        sendMapBlock(onlinePlayer);
+        onlinePlayer.resetPlayer();
         event.getPlayer().getInventory().clear();
     }
 
@@ -101,9 +110,11 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
         arena.getMap().load("SG_MAP_" + Core.getRandom().nextInt(100));
         runningGame = new SGGame(this, Core.getOnlinePlayers(), arena);
         runningGame.startGame();
+        if (Core.getNetworkManager() != null) ServerHelper.setStatus(IN_GAME_STATUS);
     }
 
     void gameEnded() {
+        if (Core.getNetworkManager() != null) ServerHelper.setStatus(GAME_OVER_STATUS);
         Bukkit.getScheduler().runTaskLater(SurvivalGames.getInstance(), new Runnable() {
             @Override
             public void run() {
@@ -129,7 +140,10 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
 
     @Override
     public void onPlayerLogin(CPlayer player, InetAddress address) throws CPlayerJoinException {
-
+        if (Core.getOnlinePlayers().size() >= SurvivalGames.getInstance().getConfig().getInt("max-players")){
+            //TODO priority join
+            throw new CPlayerJoinException("The server is full!");
+        }
     }
 
     @Override
@@ -137,7 +151,19 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
         if (runningGame == null) votingSession.removeVoteFor(player);
         else {
             runningGame.removeTribute(player);
-            runningGame.startGame();
+            runningGame.checkForWin();
+        }
+    }
+
+    private void sendMapBlock(CPlayer player) {
+        player.sendMessage(SurvivalGames.getInstance().getFormat("lobby-message", new String[]{"<seconds>", String.valueOf(gameTimer.getLength() - gameTimer.getSecondsPassed())}));
+        player.sendMessage(SurvivalGames.getInstance().getFormat("voting-options.header"));
+        for (SGMap sgMap : votingSession.getMapSelection()) {
+            player.sendMessage(SurvivalGames.getInstance().getFormat("voting-options.map-line",
+                    new String[]{"<name>", sgMap.getName()},
+                    new String[]{"<votes>", String.valueOf(votingSession.getVotesFor(sgMap))},
+                    new String[]{"<n>", String.valueOf(votingSession.getNumberFor(sgMap))}
+            ));
         }
     }
 
@@ -157,6 +183,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
                     cPlayer.sendMessage(format);
                     cPlayer.playSoundForPlayer(Sound.CLICK);
                 }
+                startTimer();
             } else {
                 beginGame();
             }
@@ -173,6 +200,11 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
                 for (CPlayer cPlayer : Core.getOnlinePlayers()) {
                     cPlayer.sendMessage(format);
                     cPlayer.playSoundForPlayer(Sound.ORB_PICKUP);
+                }
+            }
+            if (second % 20 == 0) {
+                for (CPlayer player : Core.getOnlinePlayers()) {
+                    sendMapBlock(player);
                 }
             }
         }

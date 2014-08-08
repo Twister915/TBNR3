@@ -27,7 +27,6 @@ public final class WarpStarButton extends InventoryButton {
 
     private static ItemStack stackForWarp(Warp w, Integer materialIndice) {
         ItemStack stack = new ItemStack(w.getMaterials()[materialIndice % w.getMaterials().length]);
-        stack.setDurability(w.getDataValue());
         ItemMeta itemMeta = stack.getItemMeta();
         itemMeta.setDisplayName(w.getName());
         itemMeta.setLore(Arrays.asList(ChatColor.DARK_AQUA + "Click to warp!"));

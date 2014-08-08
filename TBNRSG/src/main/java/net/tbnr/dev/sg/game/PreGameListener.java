@@ -6,6 +6,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 
@@ -39,5 +40,10 @@ public final class PreGameListener implements Listener {
     public void onPlayerMove(PlayerMoveEvent event) {
         if (event.getTo().getY() <= 1)
             event.getPlayer().teleport(SurvivalGames.getInstance().getGameManager().getPreGameLobby().getSpawnPoints().iterator().next().getLocation(event.getTo().getWorld()));
+    }
+
+    @EventHandler
+    public void onPlayerHungerLost(FoodLevelChangeEvent event) {
+        event.setCancelled(true);
     }
 }

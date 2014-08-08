@@ -26,6 +26,6 @@ public final class WorldListener implements Listener {
 
     @EventHandler
     public void onWeatherChange(WeatherChangeEvent event) {
-        event.setCancelled(!event.toWeatherState());
+        if (event.toWeatherState()) event.setCancelled(true);
     }
 }

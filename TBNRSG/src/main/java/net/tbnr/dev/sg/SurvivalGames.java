@@ -13,8 +13,6 @@ import net.tbnr.dev.sg.game.GameManager;
 import net.tbnr.dev.sg.game.map.SGMongoMapManager;
 import net.tbnr.dev.sg.setup.SGSetupManager;
 import org.bukkit.ChatColor;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 
 import java.net.InetAddress;
 

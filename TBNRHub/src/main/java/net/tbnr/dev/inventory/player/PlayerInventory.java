@@ -1,5 +1,6 @@
 package net.tbnr.dev.inventory.player;
 
+import net.cogzmc.core.gui.InventoryButton;
 import net.cogzmc.core.gui.InventoryGraphicalInterface;
 import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.hub.Hub;
@@ -23,10 +24,23 @@ public final class PlayerInventory extends ControlledInventory implements Listen
         Bukkit.getPluginManager().registerEvents(this, TBNRHub.getInstance());
     }
 
-    private final InventoryGraphicalInterface warpStarMenu = new InventoryGraphicalInterface(9, ChatColor.GREEN + "TBNR");
+    private final InventoryGraphicalInterface warpStarMenu = getNewWarpMenu();
+
+    {
+        Bukkit.getScheduler().runTaskTimer(TBNRHub.getInstance(), new WarpUpdater(), 20L, 20L);
+    }
+
+    private InventoryGraphicalInterface getNewWarpMenu() {
+        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.GREEN + "TBNR");
+        for (Warp warp : TBNRHub.getInstance().getWarpRepository()) {
+            graphicalInterface.addButton(new WarpStarButton(warp));
+        }
+        graphicalInterface.updateInventory();
+        return graphicalInterface;
+    }
 
     private InventoryGraphicalInterface getPerkMenuFor(CPlayer player) {
-        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.GOLD + ChatColor.BOLD.toString() + "Perk Menu.");
+        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.GOLD + ChatColor.BOLD.toString() + "Perk Menu");
         for (PlayerSetting perk : perks) {
             graphicalInterface.addButton(new PerkButton(perk, player, graphicalInterface));
         }
@@ -106,5 +120,15 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                 };
         }
         return null;
+    }
+
+    private class WarpUpdater implements Runnable {
+        @Override
+        public void run() {
+            for (InventoryButton inventoryButton : warpStarMenu.getButtons()) {
+                ((WarpStarButton)inventoryButton).update();
+            }
+            warpStarMenu.updateInventory();
+        }
     }
 }

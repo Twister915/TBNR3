@@ -9,6 +9,4 @@ public final class Warp {
     private Point point;
     private String name;
     private Material[] materials;
-    private short dataValue;
-    private String title;
 }

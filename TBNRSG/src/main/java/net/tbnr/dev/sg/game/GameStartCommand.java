@@ -17,9 +17,9 @@ public final class GameStartCommand extends ModuleCommand {
         if (SurvivalGames.getInstance().getGameManager().getRunningGame() != null) throw new CommandException("You cannot start a game when there is one running!");
         SGMap map = null;
         if (args.length > 0) {
-            String join = Joiner.on(' ').join(args);
+            String join = Joiner.on(' ').join(args).toLowerCase();
             for (SGMap sgMap : SurvivalGames.getInstance().getMapManager().getMaps()) {
-                if (sgMap.getName().equalsIgnoreCase(join)) {
+                if (sgMap.getName().toLowerCase().startsWith(join)) {
                     map = sgMap;
                     break;
                 }

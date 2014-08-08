@@ -46,7 +46,7 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 
 public final class SGGame implements Listener {
-    private final static Integer DEFAULT_POINTS = 1000;
+    private final static Integer DEFAULT_POINTS = 100;
 
     private final ControlledInventory spectatorInventory = new ControlledInventory() {
         {
@@ -62,7 +62,7 @@ public final class SGGame implements Listener {
                         protected ItemStack getStack(CPlayer player) {
                             ItemStack spectator = new ItemStack(Material.COMPASS);
                             ItemMeta itemMeta = spectator.getItemMeta();
-                            itemMeta.setDisplayName(ChatColor.GRAY + "Spectator Chooser");
+                            itemMeta.setDisplayName(ChatColor.GRAY + "Spectator Selector");
                             spectator.setItemMeta(itemMeta);
                             return spectator;
                         }
@@ -79,7 +79,7 @@ public final class SGGame implements Listener {
                             ItemStack stack = new ItemStack(Material.INK_SACK);
                             stack.setDurability((short)12);
                             ItemMeta itemMeta = stack.getItemMeta();
-                            itemMeta.setDisplayName(ChatColor.DARK_AQUA + "Return to lobby");
+                            itemMeta.setDisplayName(ChatColor.DARK_AQUA + "Return to Lobby");
                             stack.setItemMeta(itemMeta);
                             return stack;
                         }
@@ -147,6 +147,7 @@ public final class SGGame implements Listener {
         while (iterator.hasNext()) {
             CPlayer next = iterator.next();
             if (!next.isOnline()) iterator.remove();
+            next.clearChatAll();
         }
         startedWith = tributes.size();
         gameStart = new Instant();
@@ -200,19 +201,22 @@ public final class SGGame implements Listener {
     private void creditGameplay(CPlayer player) {
         Integer stat = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.GAMES_PLAYED, player, Integer.class);
         if (stat == null) stat = 0;
-        StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.GAMES_PLAYED, player, stat);
+        StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.GAMES_PLAYED, player, stat+1);
         if (player.isOnline()) StatsManager.statChanged(Stat.GAMES_PLAYED, 1, player);
     }
 
     private void updateState() {
         switch (state) {
             case GAMEPLAY:
+                for (CPlayer cPlayer : Core.getOnlinePlayers()) {
+                    cPlayer.clearChatAll();
+                }
                 fillChests();
                 broadcastMessage(SurvivalGames.getInstance().getFormat("game-started"));
                 deathmatchCountdown = new Timer(1500, new GameplayTimeLimiter()).start();
                 break;
             case PRE_DEATHMATCH_1:
-                if (deathmatchCountdown.isRunning()) deathmatchCountdown.cancel();
+                if (deathmatchCountdown != null && deathmatchCountdown.isRunning()) deathmatchCountdown.cancel();
                 new Timer(60, new PreDeathmatchCountdown(SGGameState.PRE_DEATHMATCH_2)).start();
                 break;
             case PRE_DEATHMATCH_2:
@@ -229,6 +233,7 @@ public final class SGGame implements Listener {
                 }
                 break;
             case DEATHMATCH:
+                broadcastMessage(SurvivalGames.getInstance().getFormat("deathmatch-start"));
                 break;
             case POST_GAME:
                 if (tributes.size() == 1) {
@@ -271,10 +276,14 @@ public final class SGGame implements Listener {
 
     private void broadcastSound(Sound sound, Float pitch) {
         for (CPlayer tribute : tributes) {
-            tribute.playSoundForPlayer(sound, 1f, pitch);
+            tribute.playSoundForPlayer(sound, 50f, pitch);
         }
         for (CPlayer spectator : spectators) {
-            spectator.playSoundForPlayer(sound, 1f, pitch);
+            spectator.playSoundForPlayer(sound, 50f, pitch);
+        }
+        for (WeakReference<CPlayer> cPlayerWeakReference : limbo) {
+            CPlayer player;
+            if ((player = cPlayerWeakReference.get()) != null) player.playSoundForPlayer(sound, 50f, pitch);
         }
     }
 
@@ -312,11 +321,11 @@ public final class SGGame implements Listener {
         tributes.remove(player);
         for (InventoryButton inventoryButton : spectatorGUI.getButtons()) {
             if (((TributeButton) inventoryButton).tribute.equals(player)) {
-                spectatorInventory.remove(player);
+                spectatorGUI.removeButton(inventoryButton);
                 break;
             }
         }
-        spectatorInventory.updateItems();
+        spectatorGUI.updateInventory();
         broadcastMessage(SurvivalGames.getInstance().getFormat("tributes-remain", new String[]{"<tributes>", String.valueOf(tributes.size())}));
     }
 
@@ -366,7 +375,6 @@ public final class SGGame implements Listener {
             location.setYaw(event.getTo().getYaw());
             event.getPlayer().teleport(location);
             onlinePlayer.playSoundForPlayer(Sound.CREEPER_HISS, 1f, 1.3f);
-            onlinePlayer.sendMessage(SurvivalGames.getInstance().getFormat("cornicopia-bounceback"));
         }
     }
 
@@ -376,6 +384,18 @@ public final class SGGame implements Listener {
         Player bukkitPlayer = (Player) event.getEntity();
         CPlayer player = Core.getOnlinePlayer(bukkitPlayer);
         if (!tributes.contains(player)) return;
+        for (ItemStack itemStack : bukkitPlayer.getInventory()) {
+            if (itemStack == null) continue;
+            if (itemStack.getType() == Material.AIR) continue;
+            world.dropItemNaturally(bukkitPlayer.getLocation(), itemStack);
+        }
+        for (ItemStack itemStack : bukkitPlayer.getInventory().getArmorContents()) {
+            if (itemStack == null) continue;
+            if (itemStack.getType() == Material.AIR) continue;
+            world.dropItemNaturally(bukkitPlayer.getLocation(), itemStack);
+        }
+        bukkitPlayer.getInventory().clear();
+        event.getDrops().clear();
         limbo.add(new WeakReference<>(player));
         removeTribute(player);
         Integer deaths = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.DEATHS, player, Integer.class);
@@ -390,14 +410,14 @@ public final class SGGame implements Listener {
             if (killz == null) killz = 0;
             StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.KILLS, killer, killz + 1);
             StatsManager.statChanged(Stat.KILLS, 1, killer);
-            int gainedPoints = ((int) Math.floor(oldPoints * .15));
+            int gainedPoints = ((int) Math.floor(oldPoints * .10)) + 10;
             Integer points = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.POINTS, killer, Integer.class);
             if (points == null) points = DEFAULT_POINTS;
             StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.POINTS, killer,
                    points + gainedPoints
             );
             StatsManager.statChanged(Stat.POINTS, gainedPoints, killer);
-            String health = String.format("%.1f", killer.getBukkitPlayer().getHealthScale() / 2f);
+            String health = String.format("%.1f", killer.getBukkitPlayer().getHealth() / 2f);
             player.sendMessage(SurvivalGames.getInstance().getFormat("death-info", new String[]{"<killer>", killer.getDisplayName()}, new String[]{"<hearts>", health}));
             killer.sendMessage(SurvivalGames.getInstance().getFormat("you-killed", new String[]{"<dead>", player.getDisplayName()}));
         }
@@ -415,6 +435,12 @@ public final class SGGame implements Listener {
         }
         creditGameplay(player);
         checkForWin();
+    }
+
+    @EventHandler
+    public void onExplode(EntityExplodeEvent event) {
+        if (!event.getEntity() .getWorld().equals(world)) return;
+        event.blockList().clear();
     }
 
     @EventHandler
@@ -445,6 +471,7 @@ public final class SGGame implements Listener {
                 case WHEAT:
                 case CARROT:
                 case POTATO:
+                case VINE:
                     return;
             }
             event.setCancelled(true);
@@ -455,6 +482,7 @@ public final class SGGame implements Listener {
     public void onBlockPlace(BlockPlaceEvent event) {
         switch (event.getBlockPlaced().getType()) {
             case CAKE_BLOCK:
+            case FIRE:
             case WEB:
                 break;
             case TNT:
@@ -520,6 +548,7 @@ public final class SGGame implements Listener {
     public void onPlayerHunger(FoodLevelChangeEvent event) {
         HumanEntity entity = event.getEntity();
         if (!(entity instanceof Player)) return;
+        if (((Player) event.getEntity()).getFoodLevel()-event.getFoodLevel() < 0) return;
         CPlayer onlinePlayer = Core.getOnlinePlayer((Player) entity);
         if (spectators.contains(onlinePlayer)) event.setCancelled(true);
         else if (tributes.contains(onlinePlayer)) {
@@ -550,7 +579,10 @@ public final class SGGame implements Listener {
     @EventHandler
     public void onPlayerDamagePlayer(EntityDamageByEntityEvent event) {
         Entity damager = event.getDamager();
-        if (damager instanceof Player && spectators.contains(Core.getOnlinePlayer((Player) damager))) event.setCancelled(true);
+        if (!(damager instanceof Player)) return;
+        Player damager1 = (Player) damager;
+        if (spectators.contains(Core.getOnlinePlayer(damager1))) event.setCancelled(true);
+        if ((state == SGGameState.PRE_DEATHMATCH_2 || state == SGGameState.PRE_GAME) && tributes.contains(Core.getOnlinePlayer(damager1))) event.setCancelled(true);
     }
 
     @EventHandler
@@ -566,6 +598,11 @@ public final class SGGame implements Listener {
     @EventHandler
     public void onCreatureSpawn(CreatureSpawnEvent event) {
         event.getEntity().remove();
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        event.setJoinMessage(null);
     }
 
     @Data
