@@ -7,8 +7,6 @@ import net.cogzmc.core.network.NetworkServer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.regex.Pattern;
 
 public final class ServerHelper {
     private static Map<String, String> statusMap = new HashMap<>();

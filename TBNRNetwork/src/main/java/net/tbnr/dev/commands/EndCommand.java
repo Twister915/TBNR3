@@ -1,4 +1,4 @@
-package net.tbnr.dev;
+package net.tbnr.dev.commands;
 
 import lombok.Data;
 import net.cogzmc.core.Core;
@@ -6,6 +6,8 @@ import net.cogzmc.core.modular.command.CommandException;
 import net.cogzmc.core.modular.command.CommandPermission;
 import net.cogzmc.core.modular.command.ModuleCommand;
 import net.cogzmc.core.player.CPlayer;
+import net.tbnr.dev.TBNRNetwork;
+import net.tbnr.dev.ShutDownNetCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.event.EventHandler;

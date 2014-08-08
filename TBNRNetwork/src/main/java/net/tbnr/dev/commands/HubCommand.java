@@ -1,4 +1,4 @@
-package net.tbnr.dev;
+package net.tbnr.dev.commands;
 
 import net.cogzmc.core.Core;
 import net.cogzmc.core.modular.command.CommandException;
@@ -6,6 +6,8 @@ import net.cogzmc.core.modular.command.CommandMeta;
 import net.cogzmc.core.modular.command.CommandPermission;
 import net.cogzmc.core.modular.command.ModuleCommand;
 import net.cogzmc.core.player.CPlayer;
+import net.tbnr.dev.ServerHelper;
+import net.tbnr.dev.TBNRNetwork;
 
 @CommandPermission("tbnr.hub")
 @CommandMeta(aliases = {"lobby", "leave"})

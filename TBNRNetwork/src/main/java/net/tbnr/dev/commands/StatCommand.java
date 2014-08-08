@@ -1,4 +1,4 @@
-package net.tbnr.dev;
+package net.tbnr.dev.commands;
 
 import net.cogzmc.core.Core;
 import net.cogzmc.core.modular.command.ArgumentRequirementException;
@@ -6,6 +6,10 @@ import net.cogzmc.core.modular.command.CommandException;
 import net.cogzmc.core.modular.command.ModuleCommand;
 import net.cogzmc.core.player.COfflinePlayer;
 import net.cogzmc.core.player.CPlayer;
+import net.tbnr.dev.Game;
+import net.tbnr.dev.Stat;
+import net.tbnr.dev.StatsManager;
+import net.tbnr.dev.TBNRNetwork;
 
 /**
  * <p/>
