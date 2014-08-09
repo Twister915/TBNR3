@@ -4,6 +4,8 @@ import lombok.Getter;
 import net.cogzmc.core.Core;
 import net.cogzmc.core.modular.ModularPlugin;
 import net.cogzmc.core.modular.ModuleMeta;
+import net.tbnr.dev.commands.*;
+import org.bukkit.command.defaults.ClearCommand;
 
 @ModuleMeta(description = "Manages the TBNR network.", name = "TBNRNetwork")
 public final class TBNRNetwork extends ModularPlugin {
@@ -19,10 +21,12 @@ public final class TBNRNetwork extends ModularPlugin {
             Core.getNetworkManager().registerNetCommandHandler(new ServerHelper.OfflineCommandHandlr(), ServerOfflineNetCommand.class);
             Core.getNetworkManager().registerNetCommandHandler(new JoinAttemptHandler(), JoinAttemptResponse.class);
             ServerHelper.enable();
-            registerCommand(new HubCommand());
-            registerCommand(new StatCommand());
-            registerCommand(new EndCommand());
         }
+
+        registerCommand(new HubCommand());
+        registerCommand(new StatCommand());
+        registerCommand(new EndCommand());
+        registerCommand(new ClearChatCommand());
     }
 
     @Override

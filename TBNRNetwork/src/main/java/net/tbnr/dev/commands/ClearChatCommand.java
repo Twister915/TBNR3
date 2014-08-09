@@ -3,7 +3,7 @@ package net.tbnr.dev.commands;
 import net.cogzmc.core.Core;
 import net.cogzmc.core.modular.command.*;
 import net.cogzmc.core.player.CPlayer;
-import net.tbnr.dev.TBNRHub;
+import net.tbnr.dev.TBNRNetwork;
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 
@@ -31,6 +31,6 @@ public final class ClearChatCommand extends ModuleCommand {
             player.clearChatAll();
             player.playSoundForPlayer(Sound.FIZZ, 0.5F);
         }
-        sender.sendMessage(TBNRHub.getInstance().getFormat("clear-chat"));
+        sender.sendMessage(TBNRNetwork.getInstance().getFormat("clear-chat"));
     }
 }

@@ -1,8 +1,15 @@
-package net.tbnr.dev;
+package net.tbnr.dev.commands;
 
+import net.cogzmc.core.Core;
+import net.cogzmc.core.modular.command.ArgumentRequirementException;
 import net.cogzmc.core.modular.command.CommandException;
 import net.cogzmc.core.modular.command.ModuleCommand;
+import net.cogzmc.core.player.COfflinePlayer;
 import net.cogzmc.core.player.CPlayer;
+import net.tbnr.dev.Game;
+import net.tbnr.dev.Stat;
+import net.tbnr.dev.StatsManager;
+import net.tbnr.dev.TBNRNetwork;
 
 /**
  * <p/>
@@ -20,6 +27,11 @@ public final class StatCommand extends ModuleCommand {
 
     @Override
     protected void handleCommand(CPlayer player, String[] args) throws CommandException {
+        if (args.length > 1) throw new ArgumentRequirementException("Too many arguments!");
+        COfflinePlayer target;
+        if (args.length == 0) target = player;
+        else target = (COfflinePlayer) Core.getPlayerManager().getOfflinePlayerByName(args[0]);
+        if (target == null) throw new ArgumentRequirementException("Invalid player name!");
         for (Game game : Game.values()) {
             StringBuilder sb = new StringBuilder();
             String[] split = game.name().split("_");
@@ -41,3 +53,4 @@ public final class StatCommand extends ModuleCommand {
         }
     }
 }
+

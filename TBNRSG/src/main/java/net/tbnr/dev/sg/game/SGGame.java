@@ -200,6 +200,11 @@ public final class SGGame implements Listener {
             if (e instanceof Player) continue;
             e.remove();
         }
+        for (CPlayer tribute : tributes) {
+            tribute.resetPlayer();
+            tribute.getBukkitPlayer().setGameMode(GameMode.SURVIVAL);
+            spectatorGUI.addButton(new TributeButton(tribute));
+        }
 
         ensureHiddenAndShown();
         spectatorGUI.updateInventory();
@@ -385,7 +390,7 @@ public final class SGGame implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerMove(PlayerMoveEvent event) {
         CPlayer onlinePlayer1 = Core.getOnlinePlayer(event.getPlayer());
-        if (state == SGGameState.PRE_DEATHMATCH_2 && eventAppliesToTributes(event)) {
+        if (state == SGGameState.DEATHMATCH && eventAppliesToTributes(event)) {
             if (!isWithinCornicopiaBuffer(Point.of(event.getTo()))) {
                 Instant instant = timesStruckDeathmatch.get(onlinePlayer1);
                 if (instant == null || instant.plus(2000).isAfter(instant)) {
@@ -399,14 +404,13 @@ public final class SGGame implements Listener {
         if (state != SGGameState.PRE_GAME && state != SGGameState.PRE_DEATHMATCH_2) return;
         if (eventAppliesToSpectators(event)) return;
         if (!eventAppliesToTributes(event)) return;
-        CPlayer onlinePlayer = onlinePlayer1;
-        Point point = cornicopiaPoints.get(onlinePlayer);
+        Point point = cornicopiaPoints.get(onlinePlayer1);
         if (Math.abs(point.getX()-event.getTo().getX()) > 0.5 || Math.abs(point.getZ() - event.getTo().getZ()) > 0.5) {
             Location location = point.getLocation(world);
             location.setPitch(event.getTo().getPitch());
             location.setYaw(event.getTo().getYaw());
             event.getPlayer().teleport(location);
-            onlinePlayer.playSoundForPlayer(Sound.CREEPER_HISS, 1f, 1.3f);
+            onlinePlayer1.playSoundForPlayer(Sound.CREEPER_HISS, 1f, 1.3f);
         }
     }
 
@@ -728,6 +732,7 @@ public final class SGGame implements Listener {
         }
 
         private void handleTime(Timer time) {
+            if (time.getLength()-time.getSecondsPassed()%30 == 0) ensureHiddenAndShown();
             if (!RandomUtils.contains(secondsToAnnounce, time.getLength()-time.getSecondsPassed())) return;
             SGGame.this.broadcastMessage(SurvivalGames.getInstance().getFormat("gameplay-time", new String[]{"<time>", TimeUtils.formatDurationNicely(time.getTimeRemaining())}));
             SGGame.this.broadcastSound(Sound.NOTE_PLING, 0.7f);
