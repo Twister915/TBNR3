@@ -126,7 +126,7 @@ public final class SGGame implements Listener {
                 if ((distance = point.distanceSquared(point1)) > maxDistanceSquared) maxDistanceSquared = distance;
             }
         }
-        return (Math.ceil(maxDistanceSquared))+5;
+        return (Math.ceil(maxDistanceSquared))+Math.pow(5,2);
     }
 
     public SGGame(GameManager manager, Iterable<CPlayer> players, SGMap map) {
