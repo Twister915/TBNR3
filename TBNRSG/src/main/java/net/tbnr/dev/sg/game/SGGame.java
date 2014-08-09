@@ -339,7 +339,7 @@ public final class SGGame implements Listener {
         tributes.remove(player);
         for (InventoryButton inventoryButton : spectatorGUI.getButtons()) {
             if (((TributeButton) inventoryButton).tribute.equals(player)) {
-                spectatorGUI.removeButton(inventoryButton);
+                ((TributeButton) inventoryButton).died();
                 break;
             }
         }
@@ -393,9 +393,10 @@ public final class SGGame implements Listener {
         if (state == SGGameState.DEATHMATCH && eventAppliesToTributes(event)) {
             if (!isWithinCornicopiaBuffer(Point.of(event.getTo()))) {
                 Instant instant = timesStruckDeathmatch.get(onlinePlayer1);
-                if (instant == null || instant.plus(2000).isAfter(instant)) {
+                if (instant == null || instant.plus(2000).isBefore(instant)) {
                     world.strikeLightningEffect(event.getTo());
-                    event.getPlayer().damage(4);
+                    event.getPlayer().damage(6);
+                    onlinePlayer1.sendMessage(SurvivalGames.getInstance().getFormat("return-to-corn"));
                     timesStruckDeathmatch.put(onlinePlayer1, new Instant());
                 }
             }
@@ -630,6 +631,11 @@ public final class SGGame implements Listener {
     public void onPlayerDamagePlayer(EntityDamageByEntityEvent event) {
         Entity damager = event.getDamager();
         if (!(damager instanceof Player)) return;
+        EntityType entityType = event.getEntityType();
+        if (entityType == EntityType.ITEM_FRAME || entityType == EntityType.PAINTING) {
+            event.setCancelled(true);
+            return;
+        }
         Player damager1 = (Player) damager;
         if (spectators.contains(Core.getOnlinePlayer(damager1))) event.setCancelled(true);
         if ((state == SGGameState.PRE_DEATHMATCH_2 || state == SGGameState.PRE_GAME) && tributes.contains(Core.getOnlinePlayer(damager1))) event.setCancelled(true);
@@ -694,7 +700,7 @@ public final class SGGame implements Listener {
         protected void announceSecond(Integer second) {
             if (!(RandomUtils.contains(broadcastSeconds, second))) return;
             broadcastMessage(SurvivalGames.getInstance().getFormat("pre-deathmatch" + (state == SGGameState.PRE_DEATHMATCH_2 ? "-2" : ""), new String[]{"<seconds>", String.valueOf(second)}));
-            broadcastSound(Sound.ORB_PICKUP, 1f - (second < 10 ? 0.1f * second : 0f));
+            broadcastSound(Sound.ORB_PICKUP, 1f - (second < 10 ? 0.05f * second : 0f));
         }
     }
 
@@ -708,7 +714,7 @@ public final class SGGame implements Listener {
         protected void announceSecond(Integer second) {
             if (!RandomUtils.contains(broadcastSeconds, second)) return;
             SGGame.this.broadcastMessage(SurvivalGames.getInstance().getFormat("pre-game-countdown", new String[]{"<seconds>", String.valueOf(second)}));
-            SGGame.this.broadcastSound(Sound.ORB_PICKUP, 1f - (second < 10 ? 0.1f * second : 0f));
+            SGGame.this.broadcastSound(Sound.ORB_PICKUP, 1f - (second < 10 ? 0.05f * second : 0f));
         }
     }
 
@@ -724,6 +730,7 @@ public final class SGGame implements Listener {
         public void countdownEnded(Timer timer, Integer totalSeconds) {
             handleTime(timer);
             SGGame.this.state = SGGameState.PRE_DEATHMATCH_1;
+            SGGame.this.updateState();
         }
 
         @Override
@@ -740,15 +747,30 @@ public final class SGGame implements Listener {
     }
 
     private class TributeButton extends InventoryButton {
-        private final CPlayer tribute;
+        private final WeakReference<CPlayer> tribute;
+        private boolean isDead = false;
+        private final String displayName;
 
         private TributeButton(CPlayer tribute) {
             super(getStackForTribute(tribute));
-            this.tribute = tribute;
+            this.tribute = new WeakReference<>(tribute);
+            this.displayName = tribute.getDisplayName();
+        }
+
+        public void died() {
+            isDead = true;
+            ItemStack skull = new ItemStack(Material.SKULL_ITEM);
+            skull.setDurability((short) SkullType.SKELETON.ordinal());
+            ItemMeta itemMeta = skull.getItemMeta();
+            itemMeta.setDisplayName(ChatColor.GREEN + displayName);
+            itemMeta.setLore(Arrays.asList(ChatColor.RED + "This tribute has fallen"));
+            this.setStack(skull);
         }
 
         @Override
         protected void onPlayerClick(CPlayer player, ClickAction action) throws EmptyHandlerException {
+            CPlayer tribute = this.tribute.get();
+            if (tribute == null || isDead) return;
             if (action == ClickAction.LEFT_CLICK) {
                 player.getBukkitPlayer().teleport(tribute.getBukkitPlayer().getLocation().add(0, 4, 0));
                 player.playSoundForPlayer(Sound.ENDERMAN_TELEPORT);
