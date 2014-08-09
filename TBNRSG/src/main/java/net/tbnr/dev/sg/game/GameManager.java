@@ -26,6 +26,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.net.InetAddress;
@@ -99,6 +100,12 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
     public void onPlayerLeave(PlayerQuitEvent event) {
         if (runningGame != null) return;
         event.setQuitMessage(SurvivalGames.getInstance().getFormat("leave-message", new String[]{"<player>", Core.getOnlinePlayer(event.getPlayer()).getDisplayName()}));
+    }
+
+    @EventHandler
+    public void onPlayerKick(PlayerKickEvent event) {
+        if (runningGame != null) return;
+        event.setLeaveMessage(SurvivalGames.getInstance().getFormat("leave-message", new String[]{"<player>", Core.getOnlinePlayer(event.getPlayer()).getDisplayName()}));
     }
 
     void beginGame() {
