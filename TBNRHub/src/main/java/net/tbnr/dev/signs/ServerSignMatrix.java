@@ -45,7 +45,7 @@ public final class ServerSignMatrix {
         });
         signSet.clear();
         for (Double y = region.getMax().getY(); y >= region.getMin().getY(); y--) {
-            for (Double x = region.getMin().getX(); x <= region.getMax().getX(); x++) {
+            for (Double x = region.getMax().getX(); x >= region.getMin().getX(); x--) {
                 for (Double z = region.getMin().getZ(); z <= region.getMax().getZ(); z++) {
                     Block blockAt = world.getBlockAt(x.intValue(), y.intValue(), z.intValue());
                     if (blockAt.getType() == Material.WALL_SIGN || blockAt.getType() == Material.SIGN_POST) signSet.add(new ServerSign(Point.of(blockAt), this));
@@ -57,7 +57,7 @@ public final class ServerSignMatrix {
         }
     }
 
-    static Integer getServerNumber(NetworkServer server) {
+    public static Integer getServerNumber(NetworkServer server) {
         String name = server.getName();
         StringBuilder number = new StringBuilder();
         for (int x = name.length()-1; x >= 0; x--) {

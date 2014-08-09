@@ -12,6 +12,7 @@ import net.tbnr.dev.sg.command.SGAdminCommand;
 import net.tbnr.dev.sg.game.GameManager;
 import net.tbnr.dev.sg.game.map.SGMongoMapManager;
 import net.tbnr.dev.sg.setup.SGSetupManager;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 
 import java.net.InetAddress;
@@ -39,6 +40,7 @@ public final class SurvivalGames extends ModularPlugin {
         registerListener(new WorldListener());
         if (!setupOnlyMode) gameManager = new GameManager();
         else Core.getPlayerManager().registerCPlayerConnectionListener(new SetupModeListener());
+        if (Bukkit.getWorld("world") != null) Bukkit.unloadWorld("world", false);
     }
 
     private static class SetupModeListener implements CPlayerConnectionListener {

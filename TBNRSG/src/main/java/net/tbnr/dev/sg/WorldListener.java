@@ -11,7 +11,8 @@ import org.bukkit.event.weather.WeatherChangeEvent;
 public final class WorldListener implements Listener {
     @EventHandler
     public void onFireSpread(BlockSpreadEvent event) {
-        if (event.getBlock().getType() == Material.FIRE || event.getBlock().getType() == Material.LAVA) event.setCancelled(true);
+        if (event.getBlock().getType() == Material.WATER) return;
+        event.setCancelled(true);
     }
 
     @EventHandler

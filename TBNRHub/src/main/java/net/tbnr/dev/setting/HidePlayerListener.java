@@ -1,5 +1,6 @@
 package net.tbnr.dev.setting;
 
+import com.comphenix.protocol.ProtocolLibrary;
 import net.cogzmc.core.Core;
 import net.cogzmc.core.player.CPlayer;
 import net.tbnr.dev.TBNRHub;
@@ -18,7 +19,7 @@ public final class HidePlayerListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerJoin(PlayerJoinEvent event) {
         PlayerSettingsManager settingsManager = TBNRHub.getInstance().getSettingsManager();
-        CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
+        final CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
         if (!settingsManager.getStateFor(PlayerSetting.PLAYERS, onlinePlayer)) {
             hidePlayersFor(onlinePlayer);
         }
@@ -30,7 +31,7 @@ public final class HidePlayerListener implements Listener {
                 public void run() {
                     cPlayer.getBukkitPlayer().hidePlayer(bukkitPlayer);
                 }
-            },2L);
+            },4L);
         }
     }
 

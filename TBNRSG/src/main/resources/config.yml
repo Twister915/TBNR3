@@ -1,2 +1,9 @@
 min-players: 12
 max-players: 24
+#survivalgames.priority.*
+priorities:
+- staff
+- vip
+- tbnr
+- hero
+- premium

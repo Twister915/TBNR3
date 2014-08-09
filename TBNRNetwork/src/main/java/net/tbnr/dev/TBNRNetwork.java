@@ -17,6 +17,8 @@ public final class TBNRNetwork extends ModularPlugin {
             Core.getNetworkManager().registerNetCommandHandler(new ServerHelper.ReqCommandHandlr(), RequestStatusNetCommand.class);
             Core.getNetworkManager().registerNetCommandHandler(new ShutDownManager(), ShutDownNetCommand.class);
             Core.getNetworkManager().registerNetCommandHandler(new ServerHelper.OfflineCommandHandlr(), ServerOfflineNetCommand.class);
+            Core.getNetworkManager().registerNetCommandHandler(new JoinAttemptHandler(), JoinAttemptResponse.class);
+            ServerHelper.enable();
             registerCommand(new HubCommand());
             registerCommand(new StatCommand());
             registerCommand(new EndCommand());

@@ -2,11 +2,16 @@ package net.tbnr.dev.sg.game;
 
 import lombok.Getter;
 import net.cogzmc.core.Core;
+import net.cogzmc.core.network.NetCommandHandler;
+import net.cogzmc.core.network.NetworkServer;
+import net.cogzmc.core.player.COfflinePlayer;
 import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.core.player.CPlayerConnectionListener;
 import net.cogzmc.core.player.CPlayerJoinException;
 import net.cogzmc.core.util.Point;
 import net.cogzmc.util.RandomUtils;
+import net.tbnr.dev.JoinAttempt;
+import net.tbnr.dev.JoinAttemptResponse;
 import net.tbnr.dev.ServerHelper;
 import net.tbnr.dev.sg.SurvivalGames;
 import net.tbnr.dev.sg.command.VoteCommand;
@@ -21,11 +26,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.net.InetAddress;
 import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
 
-public final class GameManager implements Listener, CPlayerConnectionListener {
+public final class GameManager implements Listener, CPlayerConnectionListener, NetCommandHandler<JoinAttempt> {
     private final static String PRE_GAME_STATUS = "pre_game";
     private final static String IN_GAME_STATUS = "in_game";
     private final static String GAME_OVER_STATUS = "game_over";
@@ -36,6 +44,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
     private Iterator<Point> spawnPoints;
     @Getter private final VotingSession votingSession;
     private Timer gameTimer;
+    private Integer maxPlayers;
 
     public GameManager() {
         SurvivalGames.getInstance().registerListener(this);
@@ -57,6 +66,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
                 if (Core.getNetworkManager() != null) ServerHelper.setStatus(PRE_GAME_STATUS);
             }
         }, 40L);
+        maxPlayers = SurvivalGames.getInstance().getConfig().getInt("max-players");
     }
 
     private void startTimer() {
@@ -85,6 +95,12 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
         event.getPlayer().getInventory().clear();
     }
 
+    @EventHandler
+    public void onPlayerLeave(PlayerQuitEvent event) {
+        if (runningGame != null) return;
+        event.setQuitMessage(SurvivalGames.getInstance().getFormat("leave-message", new String[]{"<player>", Core.getOnlinePlayer(event.getPlayer()).getDisplayName()}));
+    }
+
     void beginGame() {
         beginGame(votingSession.getMostVotedFor());
     }
@@ -111,6 +127,12 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
         runningGame = new SGGame(this, Core.getOnlinePlayers(), arena);
         runningGame.startGame();
         if (Core.getNetworkManager() != null) ServerHelper.setStatus(IN_GAME_STATUS);
+        Bukkit.getScheduler().runTaskLater(SurvivalGames.getInstance(), new Runnable() {
+            @Override
+            public void run() {
+                preGameLobby.getMap().unload();
+            }
+        }, 1L);
     }
 
     void gameEnded() {
@@ -139,9 +161,22 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
     }
 
     @Override
-    public void onPlayerLogin(CPlayer player, InetAddress address) throws CPlayerJoinException {
-        if (Core.getOnlinePlayers().size() >= SurvivalGames.getInstance().getConfig().getInt("max-players")){
-            //TODO priority join
+    public void onPlayerLogin(final CPlayer player, InetAddress address) throws CPlayerJoinException {
+        if (Core.getOnlinePlayers().size() >= maxPlayers){
+            if (runningGame == null) {
+                final CPlayer playerWithLowerPriority = getPlayerWithLowerPriority(getMaximumPriority(player));
+                if (playerWithLowerPriority != null) {
+                    playerWithLowerPriority.sendMessage(SurvivalGames.getInstance().getFormat("priority-kicked-donate"));
+                    ServerHelper.getLobbyServer(false).sendPlayerToServer(playerWithLowerPriority);
+                    Bukkit.getScheduler().runTaskLater(SurvivalGames.getInstance(), new Runnable() {
+                        @Override
+                        public void run() {
+                            if (playerWithLowerPriority.isOnline()) player.getBukkitPlayer().kickPlayer(SurvivalGames.getInstance().getFormat("priority-kicked-donate"));
+                        }
+                    }, 40L);
+                    return;
+                }
+            }
             throw new CPlayerJoinException("The server is full!");
         }
     }
@@ -165,6 +200,37 @@ public final class GameManager implements Listener, CPlayerConnectionListener {
                     new String[]{"<n>", String.valueOf(votingSession.getNumberFor(sgMap))}
             ));
         }
+    }
+
+    @Override
+    public void handleNetCommand(NetworkServer sender, JoinAttempt netCommand) {
+
+        JoinAttemptResponse joinAttemptResponse = new JoinAttemptResponse();
+        joinAttemptResponse.playerUUID = netCommand.playerUUID;
+        if (runningGame != null) joinAttemptResponse.allowed = false;
+        else if (Core.getOnlinePlayers().size() < maxPlayers) joinAttemptResponse.allowed = true;
+        else {
+            COfflinePlayer offlinePlayerByUUID = Core.getOfflinePlayerByUUID(UUID.fromString(netCommand.playerUUID));
+            Integer maximumPriority = getMaximumPriority(offlinePlayerByUUID);
+            CPlayer playerWithLowerPriority = getPlayerWithLowerPriority(maximumPriority);
+            joinAttemptResponse.allowed = playerWithLowerPriority != null;
+        }
+        sender.sendNetCommand(joinAttemptResponse);
+    }
+
+    private Integer getMaximumPriority(COfflinePlayer player) {
+        List<String> priorities = SurvivalGames.getInstance().getConfig().getStringList("priorities");
+        for (int i = 0; i < priorities.size(); i++) {
+            if (player.hasPermission("survivalgames.priority." + priorities.get(i))) return priorities.size()-i-1;
+        }
+        return -1;
+    }
+
+    private CPlayer getPlayerWithLowerPriority(Integer priority) {
+        for (CPlayer cPlayer : Core.getOnlinePlayers()) {
+            if (getMaximumPriority(cPlayer) < priority) return cPlayer;
+        }
+        return null;
     }
 
     private class GameStartTimer implements TimerDelegate {

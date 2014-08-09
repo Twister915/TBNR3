@@ -7,24 +7,29 @@ import lombok.Setter;
 import net.cogzmc.core.network.NetworkServer;
 import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.core.util.Point;
+import net.tbnr.dev.Game;
+import net.tbnr.dev.JoinAttemptHandler;
 import net.tbnr.dev.ServerHelper;
+import net.tbnr.dev.TBNRHub;
 import org.bukkit.ChatColor;
 import org.bukkit.block.Sign;
-
-import java.util.regex.Pattern;
 
 @Data
 @EqualsAndHashCode(of = {"point"})
 @Setter(AccessLevel.NONE)
-public final class ServerSign {
+public final class ServerSign implements JoinAttemptHandler.JoinAttemptDelegate {
     private final Point point;
     private final ServerSignMatrix matrix;
 
     private NetworkServer currentlyDisplaying;
 
     public void onClick(CPlayer player) throws IllegalStateException {
-        if (currentlyDisplaying == null || currentlyDisplaying.getOnlineCount() >= matrix.getGame().getMaxPlayers()) throw new IllegalStateException("The server is full!");
-        currentlyDisplaying.sendPlayerToServer(player);
+        if (currentlyDisplaying == null) return;
+        if (currentlyDisplaying.getOnlineCount() >= matrix.getGame().getMaxPlayers()) {
+            if (SignState.getFor(ServerHelper.getStatus(currentlyDisplaying)) != SignState.Lobby) throw new IllegalStateException("The server is full!");
+            else JoinAttemptHandler.attemptJoin(player, currentlyDisplaying, this);
+        }
+        else currentlyDisplaying.sendPlayerToServer(player);
     }
 
     public void update(NetworkServer server) {
@@ -38,17 +43,18 @@ public final class ServerSign {
             return;
         }
         String status = ServerHelper.getStatus(server);
-        if (status == null) ServerHelper.requestStatus(server);
-        sign.setLine(0, $("&a[&2TBNR&a]"));
-        StringBuilder builder = new StringBuilder();
-        for (String s : matrix.getGame().name().split("_")) {
-            builder.append(Character.toUpperCase(s.toCharArray()[0]));
-        }
-        Integer serverNumber = ServerSignMatrix.getServerNumber(server);
-        sign.setLine(1, $("&2" + builder.toString() + " - " + serverNumber));
         SignState aFor = SignState.getFor(status);
-        sign.setLine(2, $("" + aFor.color + aFor.name().toUpperCase()+ ""));
-        sign.setLine(3, $("&a" + server.getOnlineCount() + "&2/&a" + matrix.getGame().getMaxPlayers()));
+        if (status == null || aFor == SignState.Restarting) ServerHelper.requestStatus(server);
+        sign.setLine(1, getAbreviationFor(matrix.getGame()) + ServerSignMatrix.getServerNumber(server));
+        if (aFor == SignState.Restarting) {
+            sign.setLine(0, $("&4░░░░░░░░░░░░░"));
+            sign.setLine(2, $("&2»RESTARTING«"));
+            sign.setLine(3, $("&4░░░░░░░░░░░░░"));
+            return;
+        }
+        sign.setLine(0, ChatColor.GREEN + (aFor == SignState.Lobby && server.getOnlineCount() < matrix.getGame().getMaxPlayers() ? ChatColor.BOLD.toString() : "") + "»Join«");
+        sign.setLine(2, aFor.name().replaceAll("_", " "));
+        sign.setLine(3, $("&2" + server.getOnlineCount() + "/" + matrix.getGame().getMaxPlayers()));
         sign.update(true);
         currentlyDisplaying = server;
     }
@@ -61,10 +67,20 @@ public final class ServerSign {
         return ChatColor.translateAlternateColorCodes('&', s);
     }
 
+    @Override
+    public void couldNotJoin(NetworkServer server, CPlayer player) {
+        player.sendMessage(TBNRHub.getInstance().getFormat("could-not-make-room"));
+    }
+
+    @Override
+    public void joining(NetworkServer server, CPlayer player) {
+        player.sendMessage(TBNRHub.getInstance().getFormat("found-spot"));
+    }
+
     private enum SignState {
-        JOIN(true, "pre_game", ChatColor.GREEN),
-        SPECTATE(true, "in_game", ChatColor.RED),
-        GAME_OVER(false, "game_over", ChatColor.DARK_PURPLE),
+        Lobby(true, "pre_game", ChatColor.GREEN),
+        In_Game(true, "in_game", ChatColor.RED),
+        Restarting(false, "game_over", ChatColor.DARK_PURPLE),
         UNKNOWN(false, null, ChatColor.GRAY);
 
         final boolean canJoin;
@@ -86,5 +102,14 @@ public final class ServerSign {
             }
             return UNKNOWN;
         }
+    }
+
+    private static String getAbreviationFor(Game game) {
+        String name = game.name();
+        StringBuilder builder = new StringBuilder();
+        for (String s : name.split("_")) {
+            builder.append(s.charAt(0));
+        }
+        return builder.toString();
     }
 }

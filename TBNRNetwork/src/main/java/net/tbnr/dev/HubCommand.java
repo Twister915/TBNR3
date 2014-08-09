@@ -7,7 +7,6 @@ import net.cogzmc.core.modular.command.CommandPermission;
 import net.cogzmc.core.modular.command.ModuleCommand;
 import net.cogzmc.core.player.CPlayer;
 
-@CommandPermission("tbnr.hub")
 @CommandMeta(aliases = {"lobby", "leave"})
 public final class HubCommand extends ModuleCommand {
     public HubCommand() {

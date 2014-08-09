@@ -1,5 +1,6 @@
 package net.tbnr.dev.sg.game;
 
+import com.comphenix.protocol.ProtocolLibrary;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NonNull;
@@ -114,6 +115,19 @@ public final class SGGame implements Listener {
     private Map<CPlayer, Point> cornicopiaPoints = new WeakHashMap<>();
     private Map<CPlayer, Integer> hungerFlags = new WeakHashMap<>();
     private Timer deathmatchCountdown;
+    @Getter(lazy = true) private final Double maxCornDistanceSquared = _getMaxCornDistance();
+    private Map<CPlayer, Instant> timesStruckDeathmatch = new WeakHashMap<>();
+
+    private Double _getMaxCornDistance() {
+        Double maxDistanceSquared = 0d;
+        for (Point point : map.getCornicopiaSpawnPoints()) {
+            for (Point point1 : map.getCornicopiaSpawnPoints()) {
+                Double distance;
+                if ((distance = point.distanceSquared(point1)) > maxDistanceSquared) maxDistanceSquared = distance;
+            }
+        }
+        return (Math.ceil(maxDistanceSquared))+5;
+    }
 
     public SGGame(GameManager manager, Iterable<CPlayer> players, SGMap map) {
         this.manager = manager;
@@ -187,15 +201,11 @@ public final class SGGame implements Listener {
             e.remove();
         }
 
-        for (CPlayer tribute : tributes) {
-            tribute.resetPlayer();
-            tribute.getBukkitPlayer().setGameMode(GameMode.SURVIVAL);
-            spectatorGUI.addButton(new TributeButton(tribute));
-        }
+        ensureHiddenAndShown();
         spectatorGUI.updateInventory();
 
         //Start the countdown
-        new Timer(60, new PreGameCountdown()).start();
+        new Timer(30, new PreGameCountdown()).start();
     }
 
     private void creditGameplay(CPlayer player) {
@@ -212,6 +222,7 @@ public final class SGGame implements Listener {
                     cPlayer.clearChatAll();
                 }
                 fillChests();
+                ensureHiddenAndShown();
                 broadcastMessage(SurvivalGames.getInstance().getFormat("game-started"));
                 deathmatchCountdown = new Timer(1500, new GameplayTimeLimiter()).start();
                 break;
@@ -231,6 +242,7 @@ public final class SGGame implements Listener {
                 while (iterator1.hasNext()) {
                     iterator1.next().getBukkitPlayer().kickPlayer(ChatColor.RED + "Your game has ended, there is not enough room for you on the cornicopia!");
                 }
+                ensureHiddenAndShown();
                 break;
             case DEATHMATCH:
                 broadcastMessage(SurvivalGames.getInstance().getFormat("deathmatch-start"));
@@ -253,7 +265,7 @@ public final class SGGame implements Listener {
     }
 
     void checkForWin() {
-        if (tributes.size() <= 1) {
+        if (tributes.size() <= 1 && this.state != SGGameState.POST_GAME) {
             this.state = SGGameState.POST_GAME;
             updateState();
         } else if (tributes.size() <= 4 && this.state == SGGameState.GAMEPLAY) {
@@ -372,10 +384,22 @@ public final class SGGame implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerMove(PlayerMoveEvent event) {
+        CPlayer onlinePlayer1 = Core.getOnlinePlayer(event.getPlayer());
+        if (state == SGGameState.PRE_DEATHMATCH_2 && eventAppliesToTributes(event)) {
+            if (!isWithinCornicopiaBuffer(Point.of(event.getTo()))) {
+                Instant instant = timesStruckDeathmatch.get(onlinePlayer1);
+                if (instant == null || instant.plus(2000).isAfter(instant)) {
+                    world.strikeLightningEffect(event.getTo());
+                    event.getPlayer().damage(4);
+                    timesStruckDeathmatch.put(onlinePlayer1, new Instant());
+                }
+            }
+            return;
+        }
         if (state != SGGameState.PRE_GAME && state != SGGameState.PRE_DEATHMATCH_2) return;
         if (eventAppliesToSpectators(event)) return;
         if (!eventAppliesToTributes(event)) return;
-        CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
+        CPlayer onlinePlayer = onlinePlayer1;
         Point point = cornicopiaPoints.get(onlinePlayer);
         if (Math.abs(point.getX()-event.getTo().getX()) > 0.5 || Math.abs(point.getZ() - event.getTo().getZ()) > 0.5) {
             Location location = point.getLocation(world);
@@ -384,6 +408,13 @@ public final class SGGame implements Listener {
             event.getPlayer().teleport(location);
             onlinePlayer.playSoundForPlayer(Sound.CREEPER_HISS, 1f, 1.3f);
         }
+    }
+
+    private boolean isWithinCornicopiaBuffer(Point point) {
+        for (Point point1 : map.getCornicopiaSpawnPoints()) {
+            if (point.distanceSquared(point1) > getMaxCornDistanceSquared()) return false;
+        }
+        return true;
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -529,6 +560,7 @@ public final class SGGame implements Listener {
             event.setRespawnLocation(event.getPlayer().getLocation());
             makeSpectator(onlinePlayer);
             iterator.remove();
+            ensureHiddenAndShown();
             return;
         }
     }
@@ -550,6 +582,12 @@ public final class SGGame implements Listener {
         if (itemInHand != null && itemInHand.getType() == Material.FLINT_AND_STEEL) {
             itemInHand.setDurability((short) (itemInHand.getDurability() + 16));
         }
+    }
+
+    @EventHandler
+    public void onPlayerInteractEntity(EntityInteractEvent event) {
+        if (!event.getEntity().getWorld().equals(world)) return;
+        if (event.getEntity() instanceof ItemFrame) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -723,5 +761,26 @@ public final class SGGame implements Listener {
         itemMeta.setLore(Arrays.asList(ChatColor.GRAY + "Left click to teleport to this tribute.", ChatColor.GRAY + "Right click to sponsor this tribute."));
         stack.setItemMeta(itemMeta);
         return stack;
+    }
+
+    private void ensureHiddenAndShown() {
+        List<Player> players = new ArrayList<>();
+        for (CPlayer cPlayer : tributes) {
+            players.add(cPlayer.getBukkitPlayer());
+        }
+        for (CPlayer spectator : spectators) {
+            players.add(spectator.getBukkitPlayer());
+        }
+        for (CPlayer tribute : tributes) {
+            Player bukkitPlayer = tribute.getBukkitPlayer();
+            for (CPlayer spectator : spectators) {
+                bukkitPlayer.hidePlayer(spectator.getBukkitPlayer());
+            }
+            for (CPlayer cPlayer : tributes) {
+                if (cPlayer.equals(tribute)) continue;
+                bukkitPlayer.showPlayer(cPlayer.getBukkitPlayer());
+            }
+            ProtocolLibrary.getProtocolManager().updateEntity(bukkitPlayer, players);
+        }
     }
 }
