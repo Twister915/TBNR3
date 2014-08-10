@@ -1,0 +1,5 @@
+name: TBNRBungee
+main: net.tbnr.dev.bungee.TBNRBungee
+version: 1.0
+author: Twister915
+depend: [CoreBungeeDriver]

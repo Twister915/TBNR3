@@ -16,6 +16,7 @@
         <module>TBNRNetwork</module>
         <module>TBNRHive</module>
         <module>TBNRMigrator</module>
+        <module>TBNRBungee</module>
     </modules>
 
 
