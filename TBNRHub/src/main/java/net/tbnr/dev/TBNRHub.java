@@ -46,30 +46,28 @@ public final class TBNRHub extends ModularPlugin {
         matrixManager = new ServerSignMatrixManager((CMongoDatabase) Core.getInstance().getCDatabase());
         matrixManager.reload();
         spawnManager = new SpawnManager(Bukkit.getWorlds().get(0), (CMongoDatabase) Core.getInstance().getCDatabase());
-        registerAllCommands();
-        registerAllListeners();
-    }
-
-    @Override
-    protected void onModuleDisable() throws Exception {
-        parkourManager.save();
-        spawnManager.onDisable();
-    }
-
-    private void registerAllCommands() {
         registerCommand(new ClearChatCommand());
         registerCommand(new ParkourCommand());
         registerCommand(new AddWarpCommand());
         registerCommand(new SignSetupCommand());
         registerCommand(new SpawnCommand());
         registerCommand(new SetSpawnCommand());
-    }
-
-    private void registerAllListeners() {
         new BouncyPads().enable();
         new AntiLeafDecay().enable();
         PlayerGate.enable();
         HeightTracker.enable();
         HidePlayerListener.enable();
+        Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(10), 144000);
+        Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(5), 150000);
+        Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(3), 152400);
+        Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(1), 154800);
+        Bukkit.getScheduler().runTaskLater(this, new AutoRestart(), 156000);
+
+    }
+
+    @Override
+    protected void onModuleDisable() throws Exception {
+        parkourManager.save();
+        spawnManager.onDisable();
     }
 }

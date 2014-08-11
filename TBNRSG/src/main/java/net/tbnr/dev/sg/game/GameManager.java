@@ -169,7 +169,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
 
     @Override
     public void onPlayerLogin(final CPlayer player, InetAddress address) throws CPlayerJoinException {
-        if (Core.getOnlinePlayers().size() >= maxPlayers){
+        if (Core.getOnlinePlayers().size() > maxPlayers){
             if (runningGame == null) {
                 final CPlayer playerWithLowerPriority = getPlayerWithLowerPriority(getMaximumPriority(player));
                 if (playerWithLowerPriority != null) {
@@ -234,10 +234,16 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
     }
 
     private CPlayer getPlayerWithLowerPriority(Integer priority) {
+        Integer lowestPriority = priority;
+        CPlayer lowestPriorityPlayer = null;
         for (CPlayer cPlayer : Core.getOnlinePlayers()) {
-            if (getMaximumPriority(cPlayer) < priority) return cPlayer;
+            Integer maximumPriority = getMaximumPriority(cPlayer);
+            if (maximumPriority < lowestPriority) {
+                lowestPriority = maximumPriority;
+                lowestPriorityPlayer = cPlayer;
+            }
         }
-        return null;
+        return lowestPriorityPlayer;
     }
 
     private class GameStartTimer implements TimerDelegate {

@@ -111,12 +111,12 @@ public final class SGGame implements Listener {
     /* game stuff */
     @Getter private Instant gameStart;
     @Getter private Integer startedWith;
-    @Getter private SGGameState state = SGGameState.PRE_GAME;
+    @Getter SGGameState state = SGGameState.PRE_GAME;
     private Map<CPlayer, Point> cornicopiaPoints = new WeakHashMap<>();
     private Map<CPlayer, Integer> hungerFlags = new WeakHashMap<>();
     private Timer deathmatchCountdown;
     @Getter(lazy = true) private final Double maxCornDistanceSquared = _getMaxCornDistance();
-    private Map<CPlayer, Instant> timesStruckDeathmatch = new WeakHashMap<>();
+    private Map<CPlayer, Long> timesStruckDeathmatch = new WeakHashMap<>();
 
     private Double _getMaxCornDistance() {
         Double maxDistanceSquared = 0d;
@@ -220,7 +220,7 @@ public final class SGGame implements Listener {
         if (player.isOnline()) StatsManager.statChanged(Stat.GAMES_PLAYED, 1, player);
     }
 
-    private void updateState() {
+    void updateState() {
         switch (state) {
             case GAMEPLAY:
                 for (CPlayer cPlayer : Core.getOnlinePlayers()) {
@@ -339,7 +339,7 @@ public final class SGGame implements Listener {
         tributes.remove(player);
         for (InventoryButton inventoryButton : spectatorGUI.getButtons()) {
             if (((TributeButton) inventoryButton).tribute.equals(player)) {
-                ((TributeButton) inventoryButton).died();
+                spectatorGUI.removeButton(inventoryButton);
                 break;
             }
         }
@@ -392,12 +392,12 @@ public final class SGGame implements Listener {
         CPlayer onlinePlayer1 = Core.getOnlinePlayer(event.getPlayer());
         if (state == SGGameState.DEATHMATCH && eventAppliesToTributes(event)) {
             if (!isWithinCornicopiaBuffer(Point.of(event.getTo()))) {
-                Instant instant = timesStruckDeathmatch.get(onlinePlayer1);
-                if (instant == null || instant.plus(2000).isBefore(instant)) {
+                Long instant = timesStruckDeathmatch.get(onlinePlayer1);
+                if (instant == null || instant+2000 < System.currentTimeMillis()) {
                     world.strikeLightningEffect(event.getTo());
                     event.getPlayer().damage(6);
                     onlinePlayer1.sendMessage(SurvivalGames.getInstance().getFormat("return-to-corn"));
-                    timesStruckDeathmatch.put(onlinePlayer1, new Instant());
+                    timesStruckDeathmatch.put(onlinePlayer1, System.currentTimeMillis());
                 }
             }
             return;
@@ -420,6 +420,14 @@ public final class SGGame implements Listener {
             if (point.distanceSquared(point1) > getMaxCornDistanceSquared()) return false;
         }
         return true;
+    }
+
+    @EventHandler
+    public void onPlayerChat(AsyncPlayerChatEvent event) {
+        if (spectators.contains(Core.getOnlinePlayer(event.getPlayer()))) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(SurvivalGames.getInstance().getFormat("specatator-no-chat"));
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH)

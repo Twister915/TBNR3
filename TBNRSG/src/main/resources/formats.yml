@@ -26,6 +26,7 @@ game-started: "&2The games have &2begun&8!"
 has-won: "&a<name> &2has won the Survival Games&8!"
 game-over: "&2The game is ending after &a<time>&8"
 priority-kicked-donate: "&2You have been kicked to make room for a customer! Check out &ahttp://tbnr.net/shop&2 to get a donor rank yourself!"
+spectator-no-chat: "&cYou cannot chat as a spectator"
 setup:
   setup-start: "&eHello! Let's start setting up a map. Please follow the steps outlined to you in chat."
   start-cornicopia: "&ePlease stand on a cornicopia pad while looking in the direction you with the player to look, then right click to store it."

@@ -1,5 +1,4 @@
-{
-    "min_items" : 4,
+{ "min_items" : 4,
     "max_items" : 6,
     "entries" : [
         {
@@ -28,19 +27,19 @@
         },
         {
             "material" : "IRON_LEGGINGS",
-            "probability" : 0.3
+            "probability" : 0.150
         },
         {
             "material" : "IRON_HELMET",
-            "probability" : 0.3
+            "probability" : 0.150
         },
         {
             "material" : "IRON_CHESTPLATE",
-            "probability" : 0.3
+            "probability" : 0.150
         },
         {
             "material" : "IRON_BOOTS",
-            "probability" : 0.3
+            "probability" : 0.150
         },
         {
             "material" : "STONE_SWORD",
