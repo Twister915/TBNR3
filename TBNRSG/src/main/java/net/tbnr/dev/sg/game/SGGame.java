@@ -48,10 +48,11 @@ import java.util.*;
 
 public final class SGGame implements Listener {
     private final static Integer DEFAULT_POINTS = (Integer) Stat.POINTS.defaultValue;
+    private SurvivalGames plugin = SurvivalGames.getInstance();
 
     private final ControlledInventory spectatorInventory = new ControlledInventory() {
         {
-            SurvivalGames.getInstance().registerListener(this);
+            plugin.registerListener(this);
         }
 
         @Override
@@ -156,7 +157,7 @@ public final class SGGame implements Listener {
     }
 
     public void startGame() {
-        SurvivalGames.getInstance().registerListener(this);
+        plugin.registerListener(this);
         Iterator<CPlayer> iterator = tributes.iterator();
         while (iterator.hasNext()) {
             CPlayer next = iterator.next();
@@ -228,7 +229,7 @@ public final class SGGame implements Listener {
                 }
                 fillChests();
                 ensureHiddenAndShown();
-                broadcastMessage(SurvivalGames.getInstance().getFormat("game-started"));
+                broadcastMessage(plugin.getFormat("game-started"));
                 deathmatchCountdown = new Timer(1500, new GameplayTimeLimiter()).start();
                 break;
             case PRE_DEATHMATCH_1:
@@ -250,7 +251,7 @@ public final class SGGame implements Listener {
                 ensureHiddenAndShown();
                 break;
             case DEATHMATCH:
-                broadcastMessage(SurvivalGames.getInstance().getFormat("deathmatch-start"));
+                broadcastMessage(plugin.getFormat("deathmatch-start"));
                 break;
             case POST_GAME:
                 if (tributes.size() == 1) {
@@ -260,10 +261,10 @@ public final class SGGame implements Listener {
                     StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.WINS, victor, stat + 1);
                     StatsManager.statChanged(Stat.WINS, 1, victor);
                     creditGameplay(victor);
-                    broadcastMessage(SurvivalGames.getInstance().getFormat("has-won", new String[]{"<name>", victor.getDisplayName()}));
+                    broadcastMessage(plugin.getFormat("has-won", new String[]{"<name>", victor.getDisplayName()}));
                 }
                 broadcastSound(Sound.ENDERDRAGON_DEATH, 1.4f);
-                broadcastMessage(SurvivalGames.getInstance().getFormat("game-over", new String[]{"<time>", TimeUtils.formatDurationNicely(new Duration(gameStart, new Instant()))}));
+                broadcastMessage(plugin.getFormat("game-over", new String[]{"<time>", TimeUtils.formatDurationNicely(new Duration(gameStart, new Instant()))}));
                 manager.gameEnded();
                 break;
         }
@@ -344,7 +345,7 @@ public final class SGGame implements Listener {
             }
         }
         spectatorGUI.updateInventory();
-        broadcastMessage(SurvivalGames.getInstance().getFormat("tributes-remain", new String[]{"<tributes>", String.valueOf(tributes.size())}));
+        broadcastMessage(plugin.getFormat("tributes-remain", new String[]{"<tributes>", String.valueOf(tributes.size())}));
     }
 
     public void makeSpectator(final CPlayer player) {
@@ -362,7 +363,7 @@ public final class SGGame implements Listener {
         player.playSoundForPlayer(Sound.AMBIENCE_RAIN, 1f, 1.2f);
         spectatorInventory.setActive(player);
         spectatorInventory.updateItems();
-        Bukkit.getScheduler().runTaskLater(SurvivalGames.getInstance(), new Runnable() {
+        Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
             @Override
             public void run() {
                 Player bukkitPlayer2 = player.getBukkitPlayer();
@@ -380,7 +381,7 @@ public final class SGGame implements Listener {
                     handle.getClass().getField("width").set(handle, 0f);
                     handle.getClass().getField("length").set(handle, 0f);
                 } catch (Exception e) {
-                    SurvivalGames.getInstance().logMessage(ChatColor.RED + "Unable to hide spectator from arrows!");
+                    plugin.logMessage(ChatColor.RED + "Unable to hide spectator from arrows!");
                     e.printStackTrace();
                 }
             }
@@ -396,7 +397,7 @@ public final class SGGame implements Listener {
                 if (instant == null || instant+2000 < System.currentTimeMillis()) {
                     world.strikeLightningEffect(event.getTo());
                     event.getPlayer().damage(6);
-                    onlinePlayer1.sendMessage(SurvivalGames.getInstance().getFormat("return-to-corn"));
+                    onlinePlayer1.sendMessage(plugin.getFormat("return-to-corn"));
                     timesStruckDeathmatch.put(onlinePlayer1, System.currentTimeMillis());
                 }
             }
@@ -426,7 +427,7 @@ public final class SGGame implements Listener {
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         if (spectators.contains(Core.getOnlinePlayer(event.getPlayer()))) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(SurvivalGames.getInstance().getFormat("specatator-no-chat"));
+            event.getPlayer().sendMessage(plugin.getFormat("specatator-no-chat"));
         }
     }
 
@@ -460,7 +461,7 @@ public final class SGGame implements Listener {
             CPlayer killer = Core.getOnlinePlayer(bukkitPlayer.getKiller());
             killer.getBukkitPlayer().setLevel(killer.getBukkitPlayer().getLevel() + 1);
             killer.playSoundForPlayer(Sound.LEVEL_UP);
-            killer.sendMessage(SurvivalGames.getInstance().getFormat("death-exp"));
+            killer.sendMessage(plugin.getFormat("death-exp"));
             Integer killz = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.KILLS, killer, Integer.class);
             if (killz == null) killz = 0;
             StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.KILLS, killer, killz + 1);
@@ -473,17 +474,17 @@ public final class SGGame implements Listener {
             );
             StatsManager.statChanged(Stat.POINTS, gainedPoints, killer);
             String health = String.format("%.1f", killer.getBukkitPlayer().getHealth() / 2f);
-            player.sendMessage(SurvivalGames.getInstance().getFormat("death-info", new String[]{"<killer>", killer.getDisplayName()}, new String[]{"<hearts>", health}));
-            killer.sendMessage(SurvivalGames.getInstance().getFormat("you-killed", new String[]{"<dead>", player.getDisplayName()}));
+            player.sendMessage(plugin.getFormat("death-info", new String[]{"<killer>", killer.getDisplayName()}, new String[]{"<hearts>", health}));
+            killer.sendMessage(plugin.getFormat("you-killed", new String[]{"<dead>", player.getDisplayName()}));
         }
         int newPoints = (int) (oldPoints * .9);
         StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.POINTS, player, newPoints);
         StatsManager.statChanged(Stat.POINTS, newPoints-oldPoints, player);
-        player.sendMessage(SurvivalGames.getInstance().getFormat("you-died"));
+        player.sendMessage(plugin.getFormat("you-died"));
         bukkitPlayer.getWorld().strikeLightningEffect(bukkitPlayer.getLocation());
         for (CPlayer tribute : tributes) {
             tribute.getBukkitPlayer().playSound(bukkitPlayer.getLocation(), Sound.FIREWORK_LARGE_BLAST, 35f, 0.5f);
-            tribute.sendMessage(SurvivalGames.getInstance().getFormat("death", new String[]{"<blocks>",
+            tribute.sendMessage(plugin.getFormat("death", new String[]{"<blocks>",
                     String.valueOf(Math.ceil(tribute.getBukkitPlayer().getLocation().distance(bukkitPlayer.getLocation())))}));
             //PERFORMANCE NOTE: SQUARE ROOT FUNCTION USED IN A LOOP
             //¯\_(ツ)_/¯
@@ -710,7 +711,7 @@ public final class SGGame implements Listener {
         @Override
         protected void announceSecond(Integer second) {
             if (!(RandomUtils.contains(broadcastSeconds, second))) return;
-            broadcastMessage(SurvivalGames.getInstance().getFormat("pre-deathmatch" + (state == SGGameState.PRE_DEATHMATCH_2 ? "-2" : ""), new String[]{"<seconds>", String.valueOf(second)}));
+            broadcastMessage(plugin.getFormat("pre-deathmatch" + (state == SGGameState.PRE_DEATHMATCH_2 ? "-2" : ""), new String[]{"<seconds>", String.valueOf(second)}));
             broadcastSound(Sound.ORB_PICKUP, 1f - (second < 10 ? 0.05f * second : 0f));
         }
     }
@@ -724,7 +725,7 @@ public final class SGGame implements Listener {
         @Override
         protected void announceSecond(Integer second) {
             if (!RandomUtils.contains(broadcastSeconds, second)) return;
-            SGGame.this.broadcastMessage(SurvivalGames.getInstance().getFormat("pre-game-countdown", new String[]{"<seconds>", String.valueOf(second)}));
+            SGGame.this.broadcastMessage(SGGame.this.plugin.getFormat("pre-game-countdown", new String[]{"<seconds>", String.valueOf(second)}));
             SGGame.this.broadcastSound(Sound.ORB_PICKUP, 1f - (second < 10 ? 0.05f * second : 0f));
         }
     }
@@ -752,7 +753,7 @@ public final class SGGame implements Listener {
         private void handleTime(Timer time) {
             if (time.getLength()-time.getSecondsPassed()%30 == 0) ensureHiddenAndShown();
             if (!RandomUtils.contains(secondsToAnnounce, time.getLength()-time.getSecondsPassed())) return;
-            SGGame.this.broadcastMessage(SurvivalGames.getInstance().getFormat("gameplay-time", new String[]{"<time>", TimeUtils.formatDurationNicely(time.getTimeRemaining())}));
+            SGGame.this.broadcastMessage(plugin.getFormat("gameplay-time", new String[]{"<time>", TimeUtils.formatDurationNicely(time.getTimeRemaining())}));
             SGGame.this.broadcastSound(Sound.NOTE_PLING, 0.7f);
         }
     }
@@ -786,7 +787,7 @@ public final class SGGame implements Listener {
                 player.getBukkitPlayer().teleport(tribute.getBukkitPlayer().getLocation().add(0, 4, 0));
                 player.playSoundForPlayer(Sound.ENDERMAN_TELEPORT);
             } else {
-                player.sendMessage(SurvivalGames.getInstance().getFormat("coming-soon"));
+                player.sendMessage(plugin.getFormat("coming-soon"));
             }
         }
     }
