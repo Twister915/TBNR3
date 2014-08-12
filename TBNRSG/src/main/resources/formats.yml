@@ -17,6 +17,7 @@ game-starting: "&2The games will now begin&8!"
 game-force-started: "&cYou have force started a game"
 vote-cast: "&aYou have cast your vote for &e<map>"
 return-to-corn: "&2You're getting too far from the cornicopia!"
+death-exp: "&2You just died"
 voting-options:
    header: "&2You may vote for the following maps:"
    map-line: " &a#<n> &8» &a<votes> &2Votes &8» &2<name>"

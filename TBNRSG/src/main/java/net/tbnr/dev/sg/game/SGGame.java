@@ -458,6 +458,9 @@ public final class SGGame implements Listener {
         if (oldPoints == null) oldPoints = DEFAULT_POINTS;
         if (bukkitPlayer.getKiller() != null) {
             CPlayer killer = Core.getOnlinePlayer(bukkitPlayer.getKiller());
+            killer.getBukkitPlayer().setLevel(killer.getBukkitPlayer().getLevel() + 1);
+            killer.playSoundForPlayer(Sound.LEVEL_UP);
+            killer.sendMessage(SurvivalGames.getInstance().getFormat("death-exp"));
             Integer killz = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.KILLS, killer, Integer.class);
             if (killz == null) killz = 0;
             StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.KILLS, killer, killz + 1);
