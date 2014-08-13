@@ -8,5 +8,6 @@ import org.bukkit.Material;
 public final class Warp {
     private Point point;
     private String name;
+    private Integer position;
     private Material[] materials;
 }

@@ -18,7 +18,7 @@ public final class HubCommand extends ModuleCommand {
     @Override
     protected void handleCommand(CPlayer player, String[] args) throws CommandException {
         if (ServerHelper.isLobbyServer(Core.getNetworkManager().getThisServer(), false)) {
-            player.sendMessage(TBNRNetwork.getInstance().getFormat("already-in-lobby", false));
+            player.sendMessage(TBNRNetwork.getInstance().getFormat("already-on-lobby", false));
             return;
         }
         ServerHelper.getLobbyServer(false).sendPlayerToServer(player);

@@ -2,5 +2,5 @@ stat-changed: "&a&l>> &3&l<stat> <color><symbol><delta>"
 already-on-lobby: "&a&l>> &cYou are already in the lobby!"
 clear-chat: "&cYou have cleared the chat!"
 stat:
-  game: "&a&l>&2Stats for&8:&e <game>"
-  stat: "&a&l>> &2<stat>&8:&e <value>"
+  game: "&8» &2Statistics for&8: &aSurvival Games"
+  stat: "&8» &2<stat>&8:&a <value>"

@@ -1,6 +1,5 @@
 package net.tbnr.dev.setting;
 
-import com.comphenix.protocol.ProtocolLibrary;
 import net.cogzmc.core.Core;
 import net.cogzmc.core.player.CPlayer;
 import net.tbnr.dev.TBNRHub;
@@ -11,9 +10,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
-public final class HidePlayerListener implements Listener {
+public final class SettingListener implements Listener {
     public static void enable() {
-        TBNRHub.getInstance().registerListener(new HidePlayerListener());
+        TBNRHub.getInstance().registerListener(new SettingListener());
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -33,6 +32,13 @@ public final class HidePlayerListener implements Listener {
                 }
             },4L);
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPlayerJoin0(PlayerJoinEvent event) {
+        CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
+        if (TBNRHub.getInstance().getSettingsManager().getStateFor(PlayerSetting.FLY_IN_HUB, onlinePlayer))
+            onlinePlayer.getBukkitPlayer().setAllowFlight(true);
     }
 
     public static void hidePlayersFor(CPlayer player) {

@@ -2,6 +2,7 @@ package net.tbnr.dev;
 
 import net.cogzmc.core.player.COfflinePlayer;
 import net.cogzmc.core.player.CPlayer;
+import net.cogzmc.core.player.DatabaseConnectException;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 
@@ -12,6 +13,11 @@ public final class StatsManager {
 
     public static void setStat(Game game, Stat stat, COfflinePlayer player, Object value) {
         player.storeSettingValue("stat_" + game.name() + "_" + stat.name(), value);
+        try {
+            player.saveIntoDatabase();
+        } catch (DatabaseConnectException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void statChanged(Stat stat, Integer delta, CPlayer player) {

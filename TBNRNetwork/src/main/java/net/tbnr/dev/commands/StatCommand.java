@@ -3,6 +3,7 @@ package net.tbnr.dev.commands;
 import net.cogzmc.core.Core;
 import net.cogzmc.core.modular.command.ArgumentRequirementException;
 import net.cogzmc.core.modular.command.CommandException;
+import net.cogzmc.core.modular.command.CommandMeta;
 import net.cogzmc.core.modular.command.ModuleCommand;
 import net.cogzmc.core.player.COfflinePlayer;
 import net.cogzmc.core.player.CPlayer;
@@ -11,14 +12,9 @@ import net.tbnr.dev.Stat;
 import net.tbnr.dev.StatsManager;
 import net.tbnr.dev.TBNRNetwork;
 
-/**
- * <p/>
- * Latest Change: 08/08/2014.
- * <p/>
- *
- * @author Noy
- * @since 08/08/2014.
- */
+import java.util.List;
+
+@CommandMeta(aliases = {"records"})
 public final class StatCommand extends ModuleCommand {
 
     public StatCommand() {
@@ -30,7 +26,11 @@ public final class StatCommand extends ModuleCommand {
         if (args.length > 1) throw new ArgumentRequirementException("Too many arguments!");
         COfflinePlayer target;
         if (args.length == 0) target = player;
-        else target = (COfflinePlayer) Core.getPlayerManager().getOfflinePlayerByName(args[0]);
+        else {
+            List<COfflinePlayer> players = Core.getPlayerManager().getOfflinePlayerByName(args[0]);
+            if (players.size() != 1) throw new ArgumentRequirementException("The player you specified does not exist (or is not specific enough)!");
+            target = players.get(0);
+        }
         if (target == null) throw new ArgumentRequirementException("Invalid player name!");
         for (Game game : Game.values()) {
             StringBuilder sb = new StringBuilder();

@@ -203,8 +203,8 @@ public final class ParkourManager implements Listener, CPlayerConnectionListener
     }
 
     private void setupParkour(Parkour parkour) {
-        String format = TBNRHub.getInstance().getFormat("parkour-npc-title");
-        Point spawnPoint = parkour.getVillagerPoint();
+        String format = TBNRHub.getInstance().getFormat("parkour-npc-title", false);
+        Point spawnPoint = parkour.getVillagerPoint().add(0d, 4d, 0d);
         MobNPCVillager villager = new MobNPCVillager(spawnPoint, parkour.getWorld(), null, format);
         villager.setProfession(Villager.Profession.PRIEST);
         villager.spawn();

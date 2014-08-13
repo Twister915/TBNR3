@@ -63,9 +63,9 @@ public final class PlayerInventory extends ControlledInventory implements Listen
     }
 
     private InventoryGraphicalInterface getNewWarpMenu() {
-        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.GREEN + "TBNR");
+        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.GRAY + ChatColor.BOLD.toString() + "Warp Star");
         for (Warp warp : TBNRHub.getInstance().getWarpRepository()) {
-            graphicalInterface.addButton(new WarpStarButton(warp));
+            graphicalInterface.addButton(new WarpStarButton(warp), warp.getPosition());
         }
         graphicalInterface.updateInventory();
         return graphicalInterface;
@@ -108,16 +108,16 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                         }
                     }
                 };
-            case 0:
+            case 2:
                 //Hide players
                 return new ToggleItem(PlayerSetting.PLAYERS);
-            case 2:
+            case 0:
                 //Toggle jump boost
                 return new ControlledInventoryButton() {
                     @Override
                     protected ItemStack getStack(CPlayer player) {
                         ItemStack itemStack = new ItemStack(Material.INK_SACK);
-                        itemStack.setDurability((short)5);
+                        itemStack.setDurability((short)10);
                         ItemMeta itemMeta = itemStack.getItemMeta();
                         itemMeta.setDisplayName(ChatColor.GRAY + ChatColor.BOLD.toString() + "Lobby Selector");
                         itemStack.setItemMeta(itemMeta);
@@ -130,12 +130,12 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                     }
                 };
             case 6:
-                //Toggle chat
+                //Perk Menu
                 return new ControlledInventoryButton() {
                     @Override
                     protected ItemStack getStack(CPlayer player) {
                         ItemStack stack = new ItemStack(Material.INK_SACK);
-                        stack.setDurability((short) 13);
+                        stack.setDurability((short) 10);
                         ItemMeta itemMeta = stack.getItemMeta();
                         itemMeta.setDisplayName(ChatColor.GOLD + ChatColor.BOLD.toString() + "Perk Menu");
                         stack.setItemMeta(itemMeta);
@@ -153,7 +153,7 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                     @Override
                     protected ItemStack getStack(CPlayer player) {
                         ItemStack itemStack = new ItemStack(Material.INK_SACK);
-                        itemStack.setDurability((short) 9);
+                        itemStack.setDurability((short) 10);
                         ItemMeta itemMeta = itemStack.getItemMeta();
                         itemMeta.setDisplayName(ChatColor.GRAY + ChatColor.BOLD.toString() + "Return to Spawn");
                         itemStack.setItemMeta(itemMeta);

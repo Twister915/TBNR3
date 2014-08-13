@@ -4,8 +4,13 @@ import lombok.Getter;
 import net.cogzmc.core.Core;
 import net.cogzmc.core.modular.ModularPlugin;
 import net.cogzmc.core.modular.ModuleMeta;
+import net.cogzmc.core.player.CPlayer;
 import net.tbnr.dev.commands.*;
+import org.bukkit.ChatColor;
 import org.bukkit.command.defaults.ClearCommand;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 
 @ModuleMeta(description = "Manages the TBNR network.", name = "TBNRNetwork")
 public final class TBNRNetwork extends ModularPlugin {
@@ -22,7 +27,6 @@ public final class TBNRNetwork extends ModularPlugin {
             Core.getNetworkManager().registerNetCommandHandler(new JoinAttemptHandler(), JoinAttemptResponse.class);
             ServerHelper.enable();
         }
-
         registerCommand(new HubCommand());
         registerCommand(new StatCommand());
         registerCommand(new EndCommand());

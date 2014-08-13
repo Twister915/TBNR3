@@ -34,6 +34,7 @@ public final class WarpMongoRepository implements Iterable<Warp> {
     }
 
     private static final String POINT = "warp_point";
+    private static final String POSITION = "pos";
     private static final String NAME = "name";
     private static final String MATERIALS = "material_list";
 
@@ -47,6 +48,7 @@ public final class WarpMongoRepository implements Iterable<Warp> {
             list.add(material.name());
         }
         objectBuilder.add(MATERIALS, list);
+        objectBuilder.add(POSITION, warp.getPosition());
         return objectBuilder.get();
     }
 
@@ -58,7 +60,8 @@ public final class WarpMongoRepository implements Iterable<Warp> {
         for (int i = 0; i < materials.size(); i++) {
             materilz[i] = Material.valueOf((String)materials.get(i));
         }
-        return new Warp(point, name, materilz);
+        Integer position = (Integer) object.get(POSITION);
+        return new Warp(point, name, position, materilz);
     }
 
 

@@ -15,7 +15,7 @@ import net.tbnr.dev.inventory.player.PlayerInventory;
 import net.tbnr.dev.inventory.player.WarpMongoRepository;
 import net.tbnr.dev.parkour.ParkourCommand;
 import net.tbnr.dev.parkour.ParkourManager;
-import net.tbnr.dev.setting.HidePlayerListener;
+import net.tbnr.dev.setting.SettingListener;
 import net.tbnr.dev.setting.PlayerSettingsManager;
 import net.tbnr.dev.signs.ServerSignMatrixManager;
 import net.tbnr.dev.signs.SignSetupCommand;
@@ -56,7 +56,7 @@ public final class TBNRHub extends ModularPlugin {
         new AntiLeafDecay().enable();
         PlayerGate.enable();
         HeightTracker.enable();
-        HidePlayerListener.enable();
+        SettingListener.enable();
         Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(10), 144000);
         Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(5), 150000);
         Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(3), 152400);

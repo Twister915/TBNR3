@@ -26,6 +26,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.*;
@@ -206,7 +207,6 @@ public final class SGGame implements Listener {
             spectatorGUI.addButton(new TributeButton(tribute));
         }
 
-        ensureHiddenAndShown();
         spectatorGUI.updateInventory();
 
         //Start the countdown
@@ -338,8 +338,10 @@ public final class SGGame implements Listener {
         if (!tributes.contains(player)) return;
         tributes.remove(player);
         for (InventoryButton inventoryButton : spectatorGUI.getButtons()) {
-            if (((TributeButton) inventoryButton).tribute.equals(player)) {
-                spectatorGUI.removeButton(inventoryButton);
+            CPlayer cPlayer = ((TributeButton) inventoryButton).tribute.get();
+            if (cPlayer == null) continue;
+            if (cPlayer.equals(player)) {
+                ((TributeButton) inventoryButton).died();
                 break;
             }
         }
@@ -426,7 +428,7 @@ public final class SGGame implements Listener {
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         if (spectators.contains(Core.getOnlinePlayer(event.getPlayer()))) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(SurvivalGames.getInstance().getFormat("specatator-no-chat"));
+            event.getPlayer().sendMessage(SurvivalGames.getInstance().getFormat("spectator-no-chat"));
         }
     }
 
@@ -595,7 +597,7 @@ public final class SGGame implements Listener {
         Player bukkitPlayer = event.getPlayer();
         ItemStack itemInHand = bukkitPlayer.getItemInHand();
         //Limit uses on flint and steel
-        if (itemInHand != null && itemInHand.getType() == Material.FLINT_AND_STEEL) {
+        if (event.getAction() == Action.RIGHT_CLICK_BLOCK && itemInHand != null && itemInHand.getType() == Material.FLINT_AND_STEEL) {
             itemInHand.setDurability((short) (itemInHand.getDurability() + 16));
         }
     }
@@ -773,7 +775,7 @@ public final class SGGame implements Listener {
             ItemStack skull = new ItemStack(Material.SKULL_ITEM);
             skull.setDurability((short) SkullType.SKELETON.ordinal());
             ItemMeta itemMeta = skull.getItemMeta();
-            itemMeta.setDisplayName(ChatColor.GREEN + displayName);
+            itemMeta.setDisplayName(ChatColor.RED + displayName);
             itemMeta.setLore(Arrays.asList(ChatColor.RED + "This tribute has fallen"));
             this.setStack(skull);
         }

@@ -11,8 +11,8 @@ public enum PlayerSetting {
     PLAYERS("hide_players", "Players", true, new SettingChangeObserver() {
         @Override
         public void settingChanged(boolean value, CPlayer target) {
-            if (!value) HidePlayerListener.hidePlayersFor(target);
-            else HidePlayerListener.unHidePlayersFor(target);
+            if (!value) SettingListener.hidePlayersFor(target);
+            else SettingListener.unHidePlayersFor(target);
         }
     }, "Hides players (when off) from your view.", "Does not hide staff members."),
     FLY_IN_HUB("fly_in_hub", "Flight", false, "hub.perk.flight", new SettingChangeObserver() {
