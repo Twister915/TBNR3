@@ -15,6 +15,7 @@ import net.tbnr.dev.JoinAttemptResponse;
 import net.tbnr.dev.ServerHelper;
 import net.tbnr.dev.sg.SurvivalGames;
 import net.tbnr.dev.sg.command.VoteCommand;
+import net.tbnr.dev.sg.game.deathperks.DeathPerkManager;
 import net.tbnr.dev.sg.game.map.SGMap;
 import net.tbnr.dev.sg.game.util.Timer;
 import net.tbnr.dev.sg.game.util.TimerDelegate;
@@ -46,6 +47,8 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
     @Getter private final VotingSession votingSession;
     private Timer gameTimer;
     private Integer maxPlayers;
+    @Getter private final DeathPerkManager deathPerkManager = new DeathPerkManager(this);
+    @Getter private final PreGameInventoryController preGameInventoryController = new PreGameInventoryController();
 
     public GameManager() {
         SurvivalGames.getInstance().registerListener(this);
@@ -68,6 +71,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
             }
         }, 40L);
         maxPlayers = SurvivalGames.getInstance().getConfig().getInt("max-players");
+        if (Core.getNetworkManager() != null) Core.getNetworkManager().registerNetCommandHandler(this, JoinAttempt.class);
     }
 
     private void startTimer() {
@@ -89,6 +93,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
             runningGame.makeSpectator(Core.getOnlinePlayer(player));
             return;
         }
+        preGameInventoryController.setActive(onlinePlayer);
         player.teleport(getNextSpawnPoint().getLocation(preGameLobby.getMap().getWorld()));
         event.setJoinMessage(SurvivalGames.getInstance().getFormat("join-message", new String[]{"<player>", Core.getOnlinePlayer(player).getDisplayName()}));
         sendMapBlock(onlinePlayer);
@@ -125,6 +130,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
                 startGame(map);
             }
         }, 40L);
+        deathPerkManager.setLocked(true);
     }
 
     private void startGame(SGMap arena) {
@@ -211,7 +217,6 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
 
     @Override
     public void handleNetCommand(NetworkServer sender, JoinAttempt netCommand) {
-
         JoinAttemptResponse joinAttemptResponse = new JoinAttemptResponse();
         joinAttemptResponse.playerUUID = netCommand.playerUUID;
         if (runningGame != null) joinAttemptResponse.allowed = false;

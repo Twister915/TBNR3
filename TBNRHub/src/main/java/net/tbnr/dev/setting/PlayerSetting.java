@@ -22,7 +22,7 @@ public enum PlayerSetting {
             bukkitPlayer.setAllowFlight(value);
             if (bukkitPlayer.isFlying() && !value) bukkitPlayer.setFlying(false);
         }
-    }, "Allows you to fly to great heights."),
+    }, "Flight in the hub"),
     JUMP_BOOST("jump_boost", "Jump Boost", false, new SettingChangeObserver() {
         @Override
         public void settingChanged(boolean value, CPlayer target) {

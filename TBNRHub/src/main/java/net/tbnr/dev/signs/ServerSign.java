@@ -35,10 +35,10 @@ public final class ServerSign implements JoinAttemptHandler.JoinAttemptDelegate 
     public void update(NetworkServer server) {
         Sign sign = getSign();
         if (server == null) {
-            sign.setLine(0, "");
+            sign.setLine(0, $("&4░░░░░░░░░░░"));
             sign.setLine(1, $("&aTBNR"));
             sign.setLine(2, $("&aNo Server..."));
-            sign.setLine(3, "");
+            sign.setLine(3, $("&4░░░░░░░░░░░"));
             sign.update(true);
             return;
         }
@@ -47,9 +47,11 @@ public final class ServerSign implements JoinAttemptHandler.JoinAttemptDelegate 
         if (status == null || aFor == SignState.Restarting) ServerHelper.requestStatus(server);
         sign.setLine(1, getAbreviationFor(matrix.getGame()) + ServerSignMatrix.getServerNumber(server));
         if (aFor == SignState.Restarting) {
-            sign.setLine(0, $("&4░░░░░░░░░░░░░"));
+            sign.setLine(0, $("&4░░░░░░░░░░░"));
+            sign.setLine(1, "");
             sign.setLine(2, $("&2»RESTARTING«"));
-            sign.setLine(3, $("&4░░░░░░░░░░░░░"));
+            sign.setLine(3, $("&4░░░░░░░░░░░"));
+            sign.update(true);
             return;
         }
         sign.setLine(0, ChatColor.GREEN + (aFor == SignState.Lobby && server.getOnlineCount() < matrix.getGame().getMaxPlayers() ? ChatColor.BOLD.toString() : "") + "»Join«");
@@ -65,6 +67,11 @@ public final class ServerSign implements JoinAttemptHandler.JoinAttemptDelegate 
 
     private static String $(String s) {
         return ChatColor.translateAlternateColorCodes('&', s);
+    }
+
+    @Override
+    public void sentAttempt(NetworkServer server, CPlayer player) {
+        player.sendMessage(TBNRHub.getInstance().getFormat("connecting", new String[]{"<server>", getAbreviationFor(matrix.getGame()) + ServerSignMatrix.getServerNumber(server)}));
     }
 
     @Override

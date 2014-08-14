@@ -35,7 +35,8 @@ public final class WarpStarButton extends InventoryButton {
     }
 
     public void update() {
-        materialIndice = (materialIndice + 1) %  warp.getMaterials().length;
+        materialIndice++;
+        if (materialIndice > warp.getMaterials().length) materialIndice = 0;
         setStack(stackForWarp(warp, materialIndice));
     }
 

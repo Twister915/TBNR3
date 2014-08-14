@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public final class PlayerInventory extends ControlledInventory implements Listener {
-    private final static PlayerSetting[] perks = new PlayerSetting[]{PlayerSetting.RAINBOW_PARTICLE_EFFECT, PlayerSetting.FLY_IN_HUB};
+    private final static PlayerSetting[] perks = new PlayerSetting[]{PlayerSetting.FLY_IN_HUB};
 
     public PlayerInventory() {
         Bukkit.getPluginManager().registerEvents(this, TBNRHub.getInstance());
@@ -72,7 +72,7 @@ public final class PlayerInventory extends ControlledInventory implements Listen
     }
 
     private InventoryGraphicalInterface getPerkMenuFor(CPlayer player) {
-        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.GOLD + ChatColor.BOLD.toString() + "Perk Menu");
+        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.DARK_GRAY + "Perk Menu - Perks Coming Soon");
         for (PlayerSetting perk : perks) {
             graphicalInterface.addButton(new PerkButton(perk, player, graphicalInterface));
         }
@@ -116,10 +116,12 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                 return new ControlledInventoryButton() {
                     @Override
                     protected ItemStack getStack(CPlayer player) {
-                        ItemStack itemStack = new ItemStack(Material.INK_SACK);
-                        itemStack.setDurability((short)10);
+                        ItemStack itemStack = new ItemStack(Material.WOOL);
+                        itemStack.setDurability((short)3);
                         ItemMeta itemMeta = itemStack.getItemMeta();
-                        itemMeta.setDisplayName(ChatColor.GRAY + ChatColor.BOLD.toString() + "Lobby Selector");
+                        NetworkServer thisServer = Core.getNetworkManager().getThisServer();
+                        Integer serverNumber = ServerSignMatrix.getServerNumber(thisServer);
+                        itemMeta.setDisplayName(ChatColor.GRAY + ChatColor.BOLD.toString() + "Lobby Selector " + ChatColor.GREEN + "- " + ChatColor.GRAY + ChatColor.BOLD.toString() + "Lobby #" + serverNumber);
                         itemStack.setItemMeta(itemMeta);
                         return itemStack;
                     }
@@ -134,10 +136,9 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                 return new ControlledInventoryButton() {
                     @Override
                     protected ItemStack getStack(CPlayer player) {
-                        ItemStack stack = new ItemStack(Material.INK_SACK);
-                        stack.setDurability((short) 10);
+                        ItemStack stack = new ItemStack(Material.CHEST);
                         ItemMeta itemMeta = stack.getItemMeta();
-                        itemMeta.setDisplayName(ChatColor.GOLD + ChatColor.BOLD.toString() + "Perk Menu");
+                        itemMeta.setDisplayName(ChatColor.GRAY + ChatColor.BOLD.toString() + "Perk Menu");
                         stack.setItemMeta(itemMeta);
                         return stack;
                     }
@@ -152,8 +153,7 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                 return new ControlledInventoryButton() {
                     @Override
                     protected ItemStack getStack(CPlayer player) {
-                        ItemStack itemStack = new ItemStack(Material.INK_SACK);
-                        itemStack.setDurability((short) 10);
+                        ItemStack itemStack = new ItemStack(Material.ARROW);
                         ItemMeta itemMeta = itemStack.getItemMeta();
                         itemMeta.setDisplayName(ChatColor.GRAY + ChatColor.BOLD.toString() + "Return to Spawn");
                         itemStack.setItemMeta(itemMeta);

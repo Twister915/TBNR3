@@ -20,7 +20,7 @@ public class JoinAttemptHandler implements NetCommandHandler<JoinAttemptResponse
         JoinAttemptEntry entry = null;
         for (JoinAttemptEntry serverRequest : serverRequests) {
             CPlayer cPlayer = serverRequest.player.get();
-            if (cPlayer != null && cPlayer.equals(offlinePlayerByUUID) && serverRequest.server.equals(sender)) {
+            if (cPlayer != null && cPlayer.equals(offlinePlayerByUUID) && serverRequest.server.getName().equals(sender.getName())) {
                 entry = serverRequest;
                 break;
             }
@@ -33,16 +33,19 @@ public class JoinAttemptHandler implements NetCommandHandler<JoinAttemptResponse
         } else {
             delegate.couldNotJoin(sender, (CPlayer) offlinePlayerByUUID);
         }
+        serverRequests.remove(entry);
     }
 
     public static void attemptJoin(CPlayer player, NetworkServer currentlyDisplaying, JoinAttemptDelegate delegate) {
         JoinAttempt joinAttempt = new JoinAttempt();
         joinAttempt.playerUUID = player.getUniqueIdentifier().toString();
         currentlyDisplaying.sendNetCommand(joinAttempt);
+        delegate.sentAttempt(currentlyDisplaying, player);
         serverRequests.add(new JoinAttemptEntry(new WeakReference<>(player), currentlyDisplaying, delegate));
     }
 
     public static interface JoinAttemptDelegate {
+        void sentAttempt(NetworkServer server, CPlayer player);
         void couldNotJoin(NetworkServer server, CPlayer player);
         void joining(NetworkServer server, CPlayer player);
     }

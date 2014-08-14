@@ -10,11 +10,13 @@ import net.cogzmc.core.gui.InventoryButton;
 import net.cogzmc.core.gui.InventoryGraphicalInterface;
 import net.cogzmc.core.modular.command.EmptyHandlerException;
 import net.cogzmc.core.player.CPlayer;
+import net.cogzmc.core.player.DatabaseConnectException;
 import net.cogzmc.core.util.Point;
 import net.cogzmc.core.util.TimeUtils;
 import net.cogzmc.util.RandomUtils;
 import net.tbnr.dev.*;
 import net.tbnr.dev.sg.SurvivalGames;
+import net.tbnr.dev.sg.game.deathperks.DeathPerk;
 import net.tbnr.dev.sg.game.loots.Tier;
 import net.tbnr.dev.sg.game.map.SGMap;
 import net.tbnr.dev.sg.game.util.Timer;
@@ -103,6 +105,8 @@ public final class SGGame implements Listener {
     private final Set<CPlayer> tributes = new HashSet<>();
     private final Set<CPlayer> spectators = new HashSet<>();
     private final Set<WeakReference<CPlayer>> limbo = new HashSet<>(); //These players have died, and will soon either respawn or disconnect. Keep an eye on them.
+    private final Set<CPlayer> deathPerkUsers = new HashSet<>();
+    private final Set<CPlayer> processedDeaths = new HashSet<>();
     @Getter private final SGMap map;
     @Getter private final World world;
 
@@ -438,7 +442,34 @@ public final class SGGame implements Listener {
         if (!(event.getEntity() instanceof Player)) return;
         Player bukkitPlayer = (Player) event.getEntity();
         CPlayer player = Core.getOnlinePlayer(bukkitPlayer);
+        if (deathPerkUsers.contains(player)) return;
         if (!tributes.contains(player)) return;
+        if (processedDeaths.contains(player)) return;
+
+        //Stats, messages, sounds, and effects
+        CPlayer killer = null;
+        if (bukkitPlayer.getKiller() != null) {
+            killer = Core.getOnlinePlayer(bukkitPlayer.getKiller());
+            killer.getBukkitPlayer().setLevel(killer.getBukkitPlayer().getLevel() + 1);
+            killer.playSoundForPlayer(Sound.LEVEL_UP);
+            killer.sendMessage(plugin.getFormat("death-exp"));
+        }
+        doAllDeath(player, killer);
+
+        //INSERT HERE DEATH CREDIT THINGYS
+        DeathPerk deathPerk = manager.getDeathPerkManager().get(player);
+        if (deathPerk != null && killer != null && !deathPerkUsers.contains(killer) && deathPerk.onDeath(this, player, killer)) {
+            bukkitPlayer.setHealth(20);
+            player.sendMessage(SurvivalGames.getInstance().getFormat("death-perk-use", new String[]{"<perk>", deathPerk.getName()}));
+            deathPerkUsers.add(player);
+            try {
+                manager.getDeathPerkManager().onUse(deathPerk, player);
+            } catch (DatabaseConnectException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+        //Bukkit things and announcements
         for (ItemStack itemStack : bukkitPlayer.getInventory()) {
             if (itemStack == null) continue;
             if (itemStack.getType() == Material.AIR) continue;
@@ -451,48 +482,79 @@ public final class SGGame implements Listener {
         }
         bukkitPlayer.getInventory().clear();
         event.getDrops().clear();
+        playerDied(player);
+    }
+
+    private void doPointsFor(CPlayer dead, CPlayer killer) {
+        Integer deadPoints = getPointsFor(dead);
+        Integer killerPoints = killer == null ? null : getPointsFor(killer);
+        int floor = (int) Math.floor(deadPoints * .1);
+        Integer killPointsDelta = 10 + floor;
+        Integer deadPointsDelta = -1 * floor;
+        if (killer != null) StatsManager.statChanged(Stat.POINTS, killPointsDelta, killer);
+        StatsManager.statChanged(Stat.POINTS, deadPointsDelta, dead);
+        killerPoints += killPointsDelta;
+        deadPoints += deadPointsDelta;
+        StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.POINTS, dead, deadPoints);
+        if (killer != null) StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.POINTS, killer, killerPoints);
+    }
+
+    private void doPvPDeath(CPlayer player, CPlayer killer) {
+        incrementStat(Stat.KILLS, player, 1);
+        String health = String.format("%.1f", Math.ceil(killer.getBukkitPlayer().getHealth()) / 2f);
+        player.sendMessage(plugin.getFormat("death-info", new String[]{"<killer>", killer.getDisplayName()}, new String[]{"<hearts>", health}));
+        killer.sendMessage(plugin.getFormat("you-killed", new String[]{"<dead>", player.getDisplayName()}));
+    }
+
+    public void doAllDeath(CPlayer player, CPlayer killer) {
+        processedDeaths.add(player);
+        player.sendMessage(plugin.getFormat("you-died"));
+        if (killer != null) doPvPDeath(player, killer);
+        doPointsFor(player, killer);
+    }
+
+    public static Integer getPointsFor(CPlayer player) {
+        Integer points = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.POINTS, player, Integer.class);
+        points = points == null ? DEFAULT_POINTS : points;
+        return points;
+    }
+
+    public void finishDeath(CPlayer player) {
+        Player bukkitPlayer = player.getBukkitPlayer();
+        bukkitPlayer.getInventory().clear();
+        bukkitPlayer.getInventory().setArmorContents(new ItemStack[4]);
+        bukkitPlayer.damage(bukkitPlayer.getMaxHealth());
+        playerDied(player);
+    }
+
+    public void revive(CPlayer player) {
+        deathPerkUsers.remove(player);
+        player.sendMessage(SurvivalGames.getInstance().getFormat("revived"));
+    }
+
+    private void playerDied(CPlayer player) {
         limbo.add(new WeakReference<>(player));
         removeTribute(player);
-        Integer deaths = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.DEATHS, player, Integer.class);
-        if (deaths == null) deaths = 0;
-        StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.DEATHS, player, deaths + 1);
-        StatsManager.statChanged(Stat.DEATHS, 1, player);
-        Integer oldPoints = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.POINTS, player, Integer.class);
-        if (oldPoints == null) oldPoints = DEFAULT_POINTS;
-        if (bukkitPlayer.getKiller() != null) {
-            CPlayer killer = Core.getOnlinePlayer(bukkitPlayer.getKiller());
-            killer.getBukkitPlayer().setLevel(killer.getBukkitPlayer().getLevel() + 1);
-            killer.playSoundForPlayer(Sound.LEVEL_UP);
-            killer.sendMessage(plugin.getFormat("death-exp"));
-            Integer killz = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.KILLS, killer, Integer.class);
-            if (killz == null) killz = 0;
-            StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.KILLS, killer, killz + 1);
-            StatsManager.statChanged(Stat.KILLS, 1, killer);
-            int gainedPoints = ((int) Math.floor(oldPoints * .10)) + 10;
-            Integer points = StatsManager.getStat(Game.SURVIVAL_GAMES, Stat.POINTS, killer, Integer.class);
-            if (points == null) points = DEFAULT_POINTS;
-            StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.POINTS, killer,
-                   points + gainedPoints
-            );
-            StatsManager.statChanged(Stat.POINTS, gainedPoints, killer);
-            String health = String.format("%.1f", killer.getBukkitPlayer().getHealth() / 2f);
-            player.sendMessage(plugin.getFormat("death-info", new String[]{"<killer>", killer.getDisplayName()}, new String[]{"<hearts>", health}));
-            killer.sendMessage(plugin.getFormat("you-killed", new String[]{"<dead>", player.getDisplayName()}));
-        }
-        int newPoints = (int) (oldPoints * .9);
-        StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.POINTS, player, newPoints);
-        StatsManager.statChanged(Stat.POINTS, newPoints-oldPoints, player);
-        player.sendMessage(plugin.getFormat("you-died"));
+        Player bukkitPlayer = player.getBukkitPlayer();
         bukkitPlayer.getWorld().strikeLightningEffect(bukkitPlayer.getLocation());
         for (CPlayer tribute : tributes) {
-            tribute.getBukkitPlayer().playSound(bukkitPlayer.getLocation(), Sound.FIREWORK_LARGE_BLAST, 35f, 0.5f);
+            tribute.getBukkitPlayer().playSound(bukkitPlayer.getLocation(), Sound.FIREWORK_LARGE_BLAST, 55f, 0.5f);
             tribute.sendMessage(plugin.getFormat("death", new String[]{"<blocks>",
                     String.valueOf(Math.ceil(tribute.getBukkitPlayer().getLocation().distance(bukkitPlayer.getLocation())))}));
             //PERFORMANCE NOTE: SQUARE ROOT FUNCTION USED IN A LOOP
             //¯\_(ツ)_/¯
         }
+        incrementStat(Stat.DEATHS, player, 1);
         creditGameplay(player);
         checkForWin();
+    }
+
+    private void incrementStat(Stat stat, CPlayer player, Integer value) {
+        Integer stat1 = StatsManager.getStat(Game.SURVIVAL_GAMES, stat, player, Integer.class);
+        if (stat1 == null) stat1 = 0;
+        stat1 += value;
+        StatsManager.setStat(Game.SURVIVAL_GAMES, stat, player, stat1);
+        StatsManager.statChanged(stat, value, player);
     }
 
     @EventHandler
