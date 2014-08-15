@@ -41,25 +41,27 @@ public final class PlayerInventory extends ControlledInventory implements Listen
     private final InventoryGraphicalInterface lobbyChooser = getNewLobbyChooser();
 
     {
-        Bukkit.getScheduler().runTaskTimer(TBNRHub.getInstance(), new Runnable() {
-            @Override
-            public void run() {
-                for (InventoryButton inventoryButton : lobbyChooser.getButtons()) {
-                    lobbyChooser.removeButton(inventoryButton);
-                }
-                List<NetworkServer> lobbyServers = ServerHelper.getLobbyServers();
-                Collections.sort(lobbyServers, new Comparator<NetworkServer>() {
-                    @Override
-                    public int compare(NetworkServer o1, NetworkServer o2) {
-                        return ServerSignMatrix.getServerNumber(o1)-ServerSignMatrix.getServerNumber(o2);
+        if (Core.getNetworkManager() != null) {
+            Bukkit.getScheduler().runTaskTimer(TBNRHub.getInstance(), new Runnable() {
+                @Override
+                public void run() {
+                    for (InventoryButton inventoryButton : lobbyChooser.getButtons()) {
+                        lobbyChooser.removeButton(inventoryButton);
                     }
-                });
-                for (NetworkServer networkServer : lobbyServers) {
-                    lobbyChooser.addButton(new LobbyButton(networkServer));
+                    List<NetworkServer> lobbyServers = ServerHelper.getLobbyServers();
+                    Collections.sort(lobbyServers, new Comparator<NetworkServer>() {
+                        @Override
+                        public int compare(NetworkServer o1, NetworkServer o2) {
+                            return ServerSignMatrix.getServerNumber(o1) - ServerSignMatrix.getServerNumber(o2);
+                        }
+                    });
+                    for (NetworkServer networkServer : lobbyServers) {
+                        lobbyChooser.addButton(new LobbyButton(networkServer));
+                    }
+                    lobbyChooser.updateInventory();
                 }
-                lobbyChooser.updateInventory();
-            }
-        }, 40L, 40L);
+            }, 40L, 40L);
+        }
     }
 
     private InventoryGraphicalInterface getNewWarpMenu() {

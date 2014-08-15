@@ -18,8 +18,10 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -34,8 +36,7 @@ public final class LastStand implements DeathPerk {
         if (killer == null) return false;
         died.addStatusEffect(PotionEffectType.CONFUSION, 1);
         died.addStatusEffect(PotionEffectType.SLOW, 2);
-        died.addStatusEffect(PotionEffectType.BLINDNESS, 2);
-        new Timer(3, new TimerDelegate() {
+        new Timer(2, new TimerDelegate() {
             private LastStandSafety safety = new LastStandSafety(died);
 
             @Override
@@ -45,24 +46,24 @@ public final class LastStand implements DeathPerk {
 
             @Override
             public void countdownEnded(Timer timer, Integer totalSeconds) {
-                died.sendMessage(SurvivalGames.getInstance().getFormat("last-stand-in", new String[]{"<seconds>", String.valueOf(timer.getLength()-timer.getSecondsPassed())}));
-            }
-
-            @Override
-            public void countdownChanged(Timer timer, Integer secondsPassed, Integer totalSeconds) {
                 PlayerInventory inventory = died.getBukkitPlayer().getInventory();
                 inventory.setArmorContents(new ItemStack[4]);
                 ItemStack[] itemStacks = new ItemStack[inventory.getSize()];
                 Arrays.fill(itemStacks, 0, 8, new ItemStack(Material.BOW));
                 inventory.setContents(itemStacks);
                 inventory.addItem(new ItemStack(Material.ARROW));
-                new LastStandSession(died, killer, game, 15, safety);
+                new LastStandSession(died, killer, game, 10, safety);
             }
-        });
+
+            @Override
+            public void countdownChanged(Timer timer, Integer secondsPassed, Integer totalSeconds) {
+                died.sendMessage(SurvivalGames.getInstance().getFormat("last-stand-in", new String[]{"<seconds>", String.valueOf(timer.getLength()-timer.getSecondsPassed())}));
+            }
+        }).start();
         return true;
     }
 
-    private class LastStandSession implements Runnable, Listener {
+    private class LastStandSession extends BukkitRunnable implements Listener {
         private final CPlayer player;
         private final CPlayer target;
         private final SGGame game;
@@ -71,7 +72,7 @@ public final class LastStand implements DeathPerk {
         private boolean hit = false;
 
         LastStandSession(CPlayer player, CPlayer target, SGGame game, Integer timeout, LastStandSafety safety) {
-            Bukkit.getScheduler().runTaskLater(SurvivalGames.getInstance(), this, timeout*20);
+            runTaskLater(SurvivalGames.getInstance(), timeout*20);
             this.player = player;
             this.target = target;
             this.game = game;
@@ -107,19 +108,25 @@ public final class LastStand implements DeathPerk {
             target.damage(target.getHealth());
             inventory1.clear();
             inventory1.setArmorContents(new ItemStack[4]);
+            cancel();
             game.revive(player);
+            for (PotionEffect effect : playerShooter.getActivePotionEffects()) {
+                playerShooter.removePotionEffect(effect.getType());
+            }
             unregisterListeners();
         }
 
 
         @EventHandler
         public void onProjectileHit(ProjectileHitEvent event) {
+            if (!event.getEntity().getShooter().equals(player.getBukkitPlayer())) return;
             Bukkit.getScheduler().runTaskLater(SurvivalGames.getInstance(), new Runnable() {
                 @Override
                 public void run() {
                     if (hit) return;
                     game.finishDeath(player);
                     unregisterListeners();
+                    cancel();
                 }
             }, 2L);
         }

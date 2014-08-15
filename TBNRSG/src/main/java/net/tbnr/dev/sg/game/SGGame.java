@@ -458,9 +458,10 @@ public final class SGGame implements Listener {
 
         //INSERT HERE DEATH CREDIT THINGYS
         DeathPerk deathPerk = manager.getDeathPerkManager().get(player);
-        if (deathPerk != null && killer != null && !deathPerkUsers.contains(killer) && deathPerk.onDeath(this, player, killer)) {
+        if (deathPerk != null && killer != null && !deathPerkUsers.contains(killer) && deathPerk.onDeath(this, player, killer) && (state == SGGameState.GAMEPLAY || state == SGGameState.PRE_DEATHMATCH_1)) {
             bukkitPlayer.setHealth(20);
             player.sendMessage(SurvivalGames.getInstance().getFormat("death-perk-use", new String[]{"<perk>", deathPerk.getName()}));
+            killer.sendMessage(SurvivalGames.getInstance().getFormat("death-perk-use-other", new String[]{"<perk>", deathPerk.getName()}));
             deathPerkUsers.add(player);
             try {
                 manager.getDeathPerkManager().onUse(deathPerk, player);
@@ -493,14 +494,14 @@ public final class SGGame implements Listener {
         Integer deadPointsDelta = -1 * floor;
         if (killer != null) StatsManager.statChanged(Stat.POINTS, killPointsDelta, killer);
         StatsManager.statChanged(Stat.POINTS, deadPointsDelta, dead);
-        killerPoints += killPointsDelta;
+        if (killer != null) killerPoints += killPointsDelta;
         deadPoints += deadPointsDelta;
         StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.POINTS, dead, deadPoints);
         if (killer != null) StatsManager.setStat(Game.SURVIVAL_GAMES, Stat.POINTS, killer, killerPoints);
     }
 
     private void doPvPDeath(CPlayer player, CPlayer killer) {
-        incrementStat(Stat.KILLS, player, 1);
+        incrementStat(Stat.KILLS, killer, 1);
         String health = String.format("%.1f", Math.ceil(killer.getBukkitPlayer().getHealth()) / 2f);
         player.sendMessage(plugin.getFormat("death-info", new String[]{"<killer>", killer.getDisplayName()}, new String[]{"<hearts>", health}));
         killer.sendMessage(plugin.getFormat("you-killed", new String[]{"<dead>", player.getDisplayName()}));
@@ -529,6 +530,8 @@ public final class SGGame implements Listener {
 
     public void revive(CPlayer player) {
         deathPerkUsers.remove(player);
+        processedDeaths.remove(player);
+        manager.getDeathPerkManager().unset(player);
         player.sendMessage(SurvivalGames.getInstance().getFormat("revived"));
     }
 

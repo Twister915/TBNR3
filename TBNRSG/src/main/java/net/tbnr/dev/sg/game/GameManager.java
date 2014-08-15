@@ -72,6 +72,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
         }, 40L);
         maxPlayers = SurvivalGames.getInstance().getConfig().getInt("max-players");
         if (Core.getNetworkManager() != null) Core.getNetworkManager().registerNetCommandHandler(this, JoinAttempt.class);
+        SurvivalGames.getInstance().registerListener(preGameInventoryController);
     }
 
     private void startTimer() {
@@ -93,12 +94,11 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
             runningGame.makeSpectator(Core.getOnlinePlayer(player));
             return;
         }
-        preGameInventoryController.setActive(onlinePlayer);
         player.teleport(getNextSpawnPoint().getLocation(preGameLobby.getMap().getWorld()));
         event.setJoinMessage(SurvivalGames.getInstance().getFormat("join-message", new String[]{"<player>", Core.getOnlinePlayer(player).getDisplayName()}));
         sendMapBlock(onlinePlayer);
         onlinePlayer.resetPlayer();
-        event.getPlayer().getInventory().clear();
+        preGameInventoryController.setActive(onlinePlayer);
     }
 
     @EventHandler
@@ -131,6 +131,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
             }
         }, 40L);
         deathPerkManager.setLocked(true);
+        HandlerList.unregisterAll(preGameInventoryController);
     }
 
     private void startGame(SGMap arena) {

@@ -25,11 +25,7 @@ public final class ServerSign implements JoinAttemptHandler.JoinAttemptDelegate 
 
     public void onClick(CPlayer player) throws IllegalStateException {
         if (currentlyDisplaying == null) return;
-        if (currentlyDisplaying.getOnlineCount() >= matrix.getGame().getMaxPlayers()) {
-            if (SignState.getFor(ServerHelper.getStatus(currentlyDisplaying)) != SignState.Lobby) throw new IllegalStateException("The server is full!");
-            else JoinAttemptHandler.attemptJoin(player, currentlyDisplaying, this);
-        }
-        else currentlyDisplaying.sendPlayerToServer(player);
+        currentlyDisplaying.sendPlayerToServer(player);
     }
 
     public void update(NetworkServer server) {

@@ -4,6 +4,7 @@ import lombok.Data;
 import net.cogzmc.core.player.CPlayer;
 import net.tbnr.dev.sg.SurvivalGames;
 import net.tbnr.dev.sg.game.SGGame;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -14,7 +15,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -33,7 +36,7 @@ public final class LetItRip implements DeathPerk {
     @Override
     public boolean onDeath(SGGame game, CPlayer died, CPlayer killer) {
         if (killer == null) return false;
-        new LetItRipSession(died, killer, game);
+        new LetItRipSession(died, killer, game).updateInventory();
         return true;
     }
 
@@ -51,26 +54,31 @@ public final class LetItRip implements DeathPerk {
 
         @EventHandler
         public void onPlayerInteract(PlayerInteractEvent event) {
-            if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.LEFT_CLICK_AIR) return;
+            if (event.getAction() == Action.PHYSICAL) return;
             Player bukkitPlayer = event.getPlayer();
             if (!bukkitPlayer.equals(player.getBukkitPlayer())) return;
-            Vector multiply = bukkitPlayer.getLocation().getDirection().clone().add(new Vector(0, 1, 0)).multiply(1.5f);
+            Vector multiply = bukkitPlayer.getLocation().getDirection().clone().add(new Vector(0, 0.05, 0)).multiply(1.5f);
             TNTPrimed spawn = bukkitPlayer.getWorld().spawn(bukkitPlayer.getLocation(), TNTPrimed.class);
             spawn.setVelocity(multiply);
             primedTnts.add(spawn);
             tnts--;
+            updateInventory();
             if (tnts == 0) {
                 HandlerList.unregisterAll(this);
-                game.finishDeath(player);
+                Bukkit.getScheduler().runTaskLater(SurvivalGames.getInstance(), new Runnable() {
+                    @Override
+                    public void run() {
+                        game.finishDeath(player);
+                    }
+                }, 10L);
                 return;
             }
-            updateInventory();
         }
 
         @EventHandler
         public void onPlayerDamage(EntityDamageByEntityEvent event) {
             if (event.getEntity().equals(player.getBukkitPlayer())) event.setCancelled(true);
-            else if (event.getDamager() instanceof TNTPrimed && primedTnts.contains(event.getDamager()) && !event.getEntity().equals(target))
+            else if (event.getDamager() instanceof TNTPrimed && primedTnts.contains(event.getDamager()) && !event.getEntity().equals(target.getBukkitPlayer()))
                 event.setCancelled(true);
         }
 
@@ -83,6 +91,16 @@ public final class LetItRip implements DeathPerk {
             }
         }
 
+        @EventHandler
+        public void onPlayerDrop(PlayerDropItemEvent event) {
+            if (event.getPlayer().equals(player.getBukkitPlayer())) event.setCancelled(true);
+        }
+
+        @EventHandler
+        public void onPlayerPickup(PlayerPickupItemEvent event) {
+            if (event.getPlayer().equals(player.getBukkitPlayer())) event.setCancelled(true);
+        }
+
         private void updateInventory() {
             ItemStack itemStack = new ItemStack(Material.TNT);
             itemStack.setAmount(tnts);
@@ -91,10 +109,12 @@ public final class LetItRip implements DeathPerk {
             Player bukkitPlayer = player.getBukkitPlayer();
             PlayerInventory inventory = bukkitPlayer.getInventory();
             inventory.clear();
-            inventory.setArmorContents(new ItemStack[4]);
-            ItemStack[] stacks = new ItemStack[inventory.getSize()];
-            Arrays.fill(stacks, 0, 8, itemStack);
-            inventory.setContents(stacks);
+            if (tnts > 0) {
+                inventory.setArmorContents(new ItemStack[4]);
+                ItemStack[] stacks = new ItemStack[inventory.getSize()];
+                Arrays.fill(stacks, 0, 9, itemStack);
+                inventory.setContents(stacks);
+            }
             bukkitPlayer.updateInventory();
         }
     }

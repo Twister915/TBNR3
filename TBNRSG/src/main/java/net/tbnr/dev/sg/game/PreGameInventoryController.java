@@ -1,5 +1,6 @@
 package net.tbnr.dev.sg.game;
 
+import net.cogzmc.core.Core;
 import net.cogzmc.core.player.CPlayer;
 import net.tbnr.dev.ControlledInventory;
 import net.tbnr.dev.ControlledInventoryButton;

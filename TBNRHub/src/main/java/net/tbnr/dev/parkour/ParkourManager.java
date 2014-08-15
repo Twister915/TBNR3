@@ -1,29 +1,33 @@
 package net.tbnr.dev.parkour;
 
+import lombok.EqualsAndHashCode;
 import net.cogzmc.core.Core;
 import net.cogzmc.core.effect.npc.AbstractMobNPC;
 import net.cogzmc.core.effect.npc.ClickAction;
 import net.cogzmc.core.effect.npc.NPCObserver;
 import net.cogzmc.core.effect.npc.mobs.MobNPCVillager;
+import net.cogzmc.core.gui.InventoryButton;
+import net.cogzmc.core.gui.InventoryGraphicalInterface;
 import net.cogzmc.core.json.PointSerializer;
 import net.cogzmc.core.json.RegionSerializer;
+import net.cogzmc.core.modular.command.EmptyHandlerException;
 import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.core.player.CPlayerConnectionListener;
 import net.cogzmc.core.player.CPlayerJoinException;
 import net.cogzmc.core.player.CooldownUnexpiredException;
 import net.cogzmc.core.util.Point;
 import net.cogzmc.core.util.Region;
+import net.cogzmc.core.util.TimeUtils;
 import net.tbnr.dev.TBNRHub;
-import net.tbnr.dev.setting.PlayerSetting;
-import org.bukkit.Bukkit;
-import org.bukkit.Sound;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.joda.time.Duration;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -37,10 +41,12 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("unchecked")
 public final class ParkourManager implements Listener, CPlayerConnectionListener {
     private static final String PARKOUR_FOLDER = "parkour";
+    private static final short[] dataValuesForInventory = new short[]{5, 6, 4, 3, 2, 14, 10};
 
     private final Map<CPlayer, ParkourSession> sessions = new WeakHashMap<>();
     private final List<Parkour> parkours = new ArrayList<>();
     private final Map<Parkour, MobNPCVillager> villagers = new HashMap<>();
+    private final Map<CPlayer, InventoryGraphicalInterface> interfaces = new WeakHashMap<>();
 
     public ParkourManager() {
         TBNRHub.getInstance().registerListener(this);
@@ -68,6 +74,14 @@ public final class ParkourManager implements Listener, CPlayerConnectionListener
         for (Parkour parkour : parkours) {
             setupParkour(parkour);
         }
+        Bukkit.getScheduler().runTaskTimer(TBNRHub.getInstance(), new Runnable() {
+            @Override
+            public void run() {
+                for (Map.Entry<Parkour, MobNPCVillager> parkourMobNPCVillagerEntry : villagers.entrySet()) {
+                    parkourMobNPCVillagerEntry.getValue().move(parkourMobNPCVillagerEntry.getKey().getVillagerPoint());
+                }
+            }
+        }, 1200, 1200);
     }
 
     private String[] getParkourFiles() {
@@ -108,18 +122,25 @@ public final class ParkourManager implements Listener, CPlayerConnectionListener
         if (sessions.containsKey(player)) return;
         for (Parkour parkour : parkours) {
             if (parkour.getStartRegion().isWithin(to)) {
-                player.playSoundForPlayer(Sound.NOTE_PIANO, 1f, 1.2f);
-                ParkourSession parkourSession = new ParkourSession(parkour, this, player);
-                parkourSession.start();
-                sessions.put(player, parkourSession);
+               startParkour(parkour, 1, player, false);
                 return;
             }
         }
     }
 
+    public void startParkour(Parkour parkour, Integer level, CPlayer player, boolean teleport) {
+        if (teleport) player.getBukkitPlayer().teleport(parkour.getLevels().get(level-1).getCheckpoint().getLocation(parkour.getWorld()));
+        player.playSoundForPlayer(Sound.NOTE_PIANO, 1f, 1.2f);
+        ParkourSession parkourSession = new ParkourSession(parkour, this, level-1, player);
+        parkourSession.start();
+        sessions.put(player, parkourSession);
+    }
+
     void parkourCompleted(ParkourSession session) {
         HandlerList.unregisterAll(session);
         sessions.remove(session.getPlayer());
+        interfaces.remove(session.getPlayer());
+        getInterfaceFor(session.getPlayer(), session.getParkour());
     }
 
     private final static String START_REGION = "start_region";
@@ -192,6 +213,7 @@ public final class ParkourManager implements Listener, CPlayerConnectionListener
 
     @Override
     public void onPlayerDisconnect(CPlayer player) {
+        interfaces.remove(player);
         if (!sessions.containsKey(player)) return;
         ParkourSession remove = sessions.remove(player);
         HandlerList.unregisterAll(remove);
@@ -202,9 +224,9 @@ public final class ParkourManager implements Listener, CPlayerConnectionListener
         setupParkour(parkourLevels);
     }
 
-    private void setupParkour(Parkour parkour) {
+    private void setupParkour(final Parkour parkour) {
         String format = TBNRHub.getInstance().getFormat("parkour-npc-title", false);
-        Point spawnPoint = parkour.getVillagerPoint().add(0d, 4d, 0d);
+        Point spawnPoint = parkour.getVillagerPoint().deepCopy().add(0d, 1d, 0d);
         MobNPCVillager villager = new MobNPCVillager(spawnPoint, parkour.getWorld(), null, format);
         villager.setProfession(Villager.Profession.PRIEST);
         villager.spawn();
@@ -216,9 +238,97 @@ public final class ParkourManager implements Listener, CPlayerConnectionListener
                 } catch (CooldownUnexpiredException e) {
                     return;
                 }
-                player.sendMessage(TBNRHub.getInstance().getFormat("villager-parkour-prompt"));
+                getInterfaceFor(player, parkour).open(player);
             }
         });
         villagers.put(parkour, villager);
+    }
+
+    private InventoryGraphicalInterface getInterfaceFor(CPlayer player, Parkour parkour) {
+        if (interfaces.containsKey(player)) return interfaces.get(player);
+        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.GREEN + ChatColor.BOLD.toString() + "Parkour");
+        for (int i = 1; i <= parkour.getLevels().size(); i++) {
+            graphicalInterface.addButton(new LevelButton(i, playerHasCompletedLevel(player, i), getBestTimeForPlayer(player, i), parkour.getLevels().get(i-1), parkour));
+        }
+        graphicalInterface.updateInventory();
+        interfaces.put(player, graphicalInterface);
+        return graphicalInterface;
+    }
+
+    @EqualsAndHashCode(callSuper = true)
+    private class LevelButton extends InventoryButton {
+        private final Integer levelNumber;
+        private final boolean completed;
+        private final Duration timeCompleted;
+        private final ParkourLevel level;
+        private final Parkour parkour;
+
+        public LevelButton(Integer levelNumber, boolean completed, Duration timeCompleted, ParkourLevel level, Parkour parkour) {
+            super(null);
+            this.levelNumber = levelNumber;
+            this.completed = completed;
+            this.timeCompleted = timeCompleted;
+            this.level = level;
+            this.parkour = parkour;
+            setStack(getStackFor(this));
+        }
+
+        @Override
+        protected void onPlayerClick(CPlayer player, ClickAction action) throws EmptyHandlerException {
+            if (sessions.get(player) != null) return;
+            if (!completed) {
+                player.sendMessage(TBNRHub.getInstance().getFormat("parkour-no-teleport"));
+                return;
+            }
+            else if (action == ClickAction.RIGHT_CLICK) {
+                if (levelNumber == parkour.getLevels().size()) return;
+                startParkour(parkour, levelNumber+1, player, true);
+            } else {
+                startParkour(parkour, levelNumber, player, true);
+            }
+            player.playSoundForPlayer(Sound.NOTE_PLING);
+        }
+    }
+
+    private ItemStack getStackFor(LevelButton levelButton) {
+        ItemStack stack = new ItemStack(Material.STAINED_CLAY);
+        stack.setDurability(dataValuesForInventory[levelButton.levelNumber-1 % dataValuesForInventory.length]);
+        ItemMeta itemMeta = stack.getItemMeta();
+        itemMeta.setDisplayName((levelButton.completed ? ChatColor.GREEN : ChatColor.RED) + ChatColor.BOLD.toString() + "Level #" + (levelButton.levelNumber) + " - " + (levelButton.completed ? "Completed" : "Not Completed"));
+        List<String> strings = new ArrayList<>();
+        strings.add("");
+        if (levelButton.completed) {
+            strings.add(ChatColor.GREEN + "You have completed this level!");
+            strings.add("");
+            strings.add(ChatColor.GREEN + "Left click this to teleport");
+            strings.add(ChatColor.GREEN + "to the start of this level.");
+            if (levelButton.parkour.getLevels().size() != levelButton.levelNumber) {
+                strings.add(ChatColor.YELLOW + "Right click this to teleport");
+                strings.add(ChatColor.YELLOW + "to the start of the next level.");
+                strings.add("");
+            }
+            strings.add(ChatColor.GREEN + "Best Time Completed: ");
+            strings.add(ChatColor.YELLOW + "   " + TimeUtils.formatDurationNicely(levelButton.timeCompleted));
+        } else {
+            strings.add(ChatColor.RED + "You have not completed this level!");
+            strings.add("");
+            strings.add(ChatColor.RED + "Right click the previous level");
+            strings.add(ChatColor.RED + "to teleport to the start of this level.");
+            strings.add("");
+        }
+        strings.add(ChatColor.GREEN + "Target Time: ");
+        strings.add(ChatColor.YELLOW + "   " +  TimeUtils.formatDurationNicely(levelButton.level.getTargetDuration()));
+        itemMeta.setLore(strings);
+        stack.setAmount(levelButton.levelNumber);
+        stack.setItemMeta(itemMeta);
+        return stack;
+    }
+
+    public static boolean playerHasCompletedLevel(CPlayer player, Integer parkourLevelNumber) {
+        return player.getSettingValue("parkour_complete_" + parkourLevelNumber, Boolean.class, false);
+    }
+
+    public static Duration getBestTimeForPlayer(CPlayer player, Integer parkourNumber) {
+        return new Duration(player.getSettingValue("parkour_level_time_" + parkourNumber, Long.class, 0L));
     }
 }

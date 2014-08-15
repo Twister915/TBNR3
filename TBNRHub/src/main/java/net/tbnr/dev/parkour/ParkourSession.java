@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.ToString;
 import net.cogzmc.core.Core;
 import net.cogzmc.core.player.CPlayer;
+import net.cogzmc.core.player.DatabaseConnectException;
 import net.cogzmc.core.util.Point;
 import net.cogzmc.core.util.TimeUtils;
 import net.tbnr.dev.TBNRHub;
@@ -21,7 +22,6 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.joda.time.Duration;
 import org.joda.time.Instant;
-import org.joda.time.format.PeriodFormatterBuilder;
 
 import java.util.*;
 
@@ -38,7 +38,7 @@ public final class ParkourSession implements Listener {
     private ParkourLevel lastLevel;
     private ParkourLevel level;
     private ParkourLevel nextLevel;
-    private Integer levelNumber = 0;
+    private Integer levelNumber;
     private List<Point> hitBlocks;
     private boolean inAirLast = false;
     private Point lastPoint; //Last location tracked at
@@ -51,11 +51,12 @@ public final class ParkourSession implements Listener {
     private Instant levelStart;
     private Map<ParkourLevel, Duration> levelTimes = new HashMap<>();
 
-    public ParkourSession(Parkour parkour, ParkourManager manager, CPlayer player) {
+    public ParkourSession(Parkour parkour, ParkourManager manager, Integer levelNumber, CPlayer player) {
         this.parkour = parkour;
         this.manager = manager;
         this.player = player;
         this.world = parkour.getWorld();
+        this.levelNumber = levelNumber;
         nextLevel = getNextLevel();
     }
 
@@ -70,6 +71,7 @@ public final class ParkourSession implements Listener {
         boolean inAirCurrent = !bukkitPlayer.isOnGround() || block.getType() == Material.AIR;
         do {
             if (parkour.getEndRegion().isWithin(current)) {
+                completedLevel(new Duration(levelStart, new Instant()));
                 endParkour();
                 break;
             }
@@ -89,11 +91,17 @@ public final class ParkourSession implements Listener {
                     player.sendMessage(TBNRHub.getInstance().getFormat("parkour-target-time"));
                 }
                 if (timerTask != null) timerTask.cancel();
+                completedLevel(levelTime);
+                try {
+                    player.saveIntoDatabase();
+                } catch (DatabaseConnectException e) {
+                    e.printStackTrace();
+                }
                 timerTask = null;
                 playing = false;
             }
             if (parkour.getStartRegion().isWithin(currentBlock) ||  (nextLevel != null && nextLevel.getStartRegion().isWithin(current))) break;
-            if (!playing && nextLevel.getStartRegion().isWithin(lastPoint) && !nextLevel.getStartRegion().isWithin(current)) {
+            if (!playing && (lastPoint == null || nextLevel.getStartRegion().isWithin(lastPoint)) && !nextLevel.getStartRegion().isWithin(current)) {
                 //move onto next level
                 lastLevel = level;
                 tickBack = true;
@@ -127,6 +135,16 @@ public final class ParkourSession implements Listener {
         } while (false);
         inAirLast = inAirCurrent;
         lastPoint = current;
+    }
+
+    private void storeTime(Integer levelNumber, Duration levelTime) {
+        Long settingValue = player.getSettingValue("parkour_level_time_" + levelNumber, Long.class);
+        if (settingValue == null || levelTime.getMillis() < settingValue) player.storeSettingValue("parkour_level_time_" + levelNumber, levelTime.getMillis());
+    }
+
+    private void completedLevel(Duration levelTime) {
+        player.storeSettingValue("parkour_complete_" + levelNumber, true);
+        storeTime(levelNumber, levelTime);
     }
 
     private void resetParkour() {

@@ -1,6 +1,7 @@
 package net.tbnr.dev.signs;
 
 import lombok.Data;
+import net.cogzmc.core.Core;
 import net.cogzmc.core.network.NetworkServer;
 import net.cogzmc.core.util.Point;
 import net.cogzmc.core.util.Region;
@@ -35,6 +36,7 @@ public final class ServerSignMatrix {
     }
 
     public void update() {
+        if (Core.getNetworkManager() == null) return;
         List<NetworkServer> servers = ServerHelper.getServers(game);
         Iterator<NetworkServer> iterator = servers.iterator();
         Collections.sort(servers, new Comparator<NetworkServer>() {

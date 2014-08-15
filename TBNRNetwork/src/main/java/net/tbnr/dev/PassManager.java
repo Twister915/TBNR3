@@ -6,7 +6,7 @@ import net.cogzmc.core.player.DatabaseConnectException;
 
 public final class PassManager {
     public static Integer getPassesForClass(String clazzName, COfflinePlayer player) {
-        return player.getSettingValue(clazzName + "_pass", Integer.class, 0);
+        return player.getSettingValue(clazzName.replaceAll("\\.", "") + "_pass", Integer.class, 0);
     }
 
     public static void addPassesForClass(Integer passes, String clazz, COfflinePlayer player) throws DatabaseConnectException {
@@ -14,7 +14,7 @@ public final class PassManager {
     }
 
     public static void setPassesForClass(Integer passes, String clazz, COfflinePlayer player) throws DatabaseConnectException {
-        player.storeSettingValue(clazz + "_pass", passes);
+        player.storeSettingValue(clazz.replaceAll("\\.", "") + "_pass", passes);
         player.saveIntoDatabase();
     }
 }

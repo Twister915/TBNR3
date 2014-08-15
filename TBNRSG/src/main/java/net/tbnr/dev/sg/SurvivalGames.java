@@ -15,6 +15,7 @@ import net.tbnr.dev.sg.setup.SGSetupManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 
+import java.io.File;
 import java.net.InetAddress;
 
 @ModuleMeta(name = "SurvivalGames", description = "TBNR's SurvivalGames plugin.")
@@ -35,6 +36,7 @@ public final class SurvivalGames extends ModularPlugin {
             e.printStackTrace();
             setupOnlyMode = true;
         }
+        if (new File(getDataFolder(), "SETUP_LOCK").exists()) setupOnlyMode = true;
         this.setupManager = new SGSetupManager();
         registerCommand(new SGAdminCommand());
         registerListener(new WorldListener());

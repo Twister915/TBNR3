@@ -39,6 +39,7 @@ public final class HeightTracker implements Listener {
         if (event.getTo().getY() < maxHeight) return;
         Player player = event.getPlayer();
         if (player.hasPermission("hub.bypass-height")) return;
+        if (TBNRHub.getInstance().getParkourManager().getParkourFor(Core.getOnlinePlayer(player)) != null) return;
         TBNRHub.getInstance().getSpawnManager().teleportToSpawn(Core.getOnlinePlayer(player));
     }
 }
