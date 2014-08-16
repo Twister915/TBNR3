@@ -24,8 +24,9 @@ public final class VotingSession {
         return votes.get(player);
     }
 
-    public void castVote(CPlayer player, SGMap map) {
+    public Integer castVote(CPlayer player, SGMap map) {
         votes.put(player, map);
+        return getVoteCountFor(player);
     }
 
     void removeVoteFor(CPlayer player) {
@@ -33,6 +34,9 @@ public final class VotingSession {
     }
 
     private Integer getVoteCountFor(CPlayer player) {
+        for (int i = 1; i < 10; i++) {
+            if (player.hasPermission("survivalgames.votes." + i)) return i;
+        }
         return 1;
     }
 

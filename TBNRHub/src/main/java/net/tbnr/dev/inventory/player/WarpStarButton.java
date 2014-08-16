@@ -7,6 +7,7 @@ import net.cogzmc.core.effect.npc.ClickAction;
 import net.cogzmc.core.gui.InventoryButton;
 import net.cogzmc.core.modular.command.EmptyHandlerException;
 import net.cogzmc.core.player.CPlayer;
+import net.tbnr.dev.TBNRHub;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -43,6 +44,7 @@ public final class WarpStarButton extends InventoryButton {
     @Override
     protected void onPlayerClick(CPlayer player, ClickAction action) throws EmptyHandlerException {
         Player bukkitPlayer = player.getBukkitPlayer();
+        if (TBNRHub.getInstance().getParkourManager().getParkourFor(player) != null) TBNRHub.getInstance().getParkourManager().getParkourFor(player).cleanupParkour();
         bukkitPlayer.teleport(warp.getPoint().getLocation(bukkitPlayer.getWorld()));
         player.playSoundForPlayer(Sound.ENDERMAN_TELEPORT, 1f, 0.7f);
         bukkitPlayer.closeInventory();

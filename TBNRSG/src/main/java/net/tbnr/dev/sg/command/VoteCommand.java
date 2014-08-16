@@ -37,8 +37,8 @@ public final class VoteCommand extends ModuleCommand {
         }
         if (map == null) throw new ArgumentRequirementException("Please type the name of a map!");
         if (map.equals(SurvivalGames.getInstance().getGameManager().getVotingSession().getVoteFor(player))) return;
-        SurvivalGames.getInstance().getGameManager().getVotingSession().castVote(player, map);
-        player.sendMessage(SurvivalGames.getInstance().getFormat("vote-cast", new String[]{"<map>", map.getName()}));
+        Integer integer = SurvivalGames.getInstance().getGameManager().getVotingSession().castVote(player, map);
+        player.sendMessage(SurvivalGames.getInstance().getFormat("vote-cast", new String[]{"<map>", map.getName()}, new String[]{"<votes>", String.valueOf(integer)}));
         player.playSoundForPlayer(Sound.ORB_PICKUP);
     }
 }

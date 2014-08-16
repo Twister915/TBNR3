@@ -45,7 +45,7 @@ public final class StatCommand extends ModuleCommand {
             TBNRNetwork instance = TBNRNetwork.getInstance();
             player.sendMessage(instance.getFormat("stat.game", new String[]{"<game>", sb.toString().trim()}));
             for (Stat stat : Stat.values()) {
-                Integer stat1 = StatsManager.getStat(game, stat, player, Integer.class);
+                Integer stat1 = StatsManager.getStat(game, stat, target, Integer.class);
                 StringBuilder builder = new StringBuilder(stat.name().toLowerCase().replaceAll("_", " "));
                 builder.setCharAt(0, Character.toUpperCase(builder.charAt(0)));
                 player.sendMessage(instance.getFormat("stat.stat", new String[]{"<stat>", builder.toString()}, new String[]{"<value>", String.valueOf(stat1 == null ? stat.defaultValue : stat1)}));

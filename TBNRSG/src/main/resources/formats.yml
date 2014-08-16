@@ -15,7 +15,7 @@ lobby-message: "&2Time until telportation into arena&8: &8[&a<seconds>&8] &2seco
 fail-start: "&2Waiting for more tributes to join&8!"
 game-starting: "&2The games will now begin&8!"
 game-force-started: "&cYou have force started a game"
-vote-cast: "&aYou have cast your vote for &e<map>"
+vote-cast: "&aYou have cast <votes> vote(s) for &e<map>"
 return-to-corn: "&2You're getting too far from the cornicopia!"
 death-exp: "&2+1 XP Level"
 death-perk-use: "&2Using &c<perk>&2!"
