@@ -215,6 +215,7 @@ public final class ParkourSession implements Listener {
         toggleSetting(PlayerSetting.FLY_IN_HUB, false);
         toggleSetting(PlayerSetting.PLAYERS, false);
         toggleSetting(PlayerSetting.JUMP_BOOST, false);
+        toggleSetting(PlayerSetting.PARTICLE_EFFECT, false);
         TBNRHub.getInstance().registerListener(this);
     }
 

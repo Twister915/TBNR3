@@ -12,6 +12,7 @@ import net.tbnr.dev.inventory.player.PlayerInventory;
 import net.tbnr.dev.inventory.player.WarpMongoRepository;
 import net.tbnr.dev.parkour.ParkourCommand;
 import net.tbnr.dev.parkour.ParkourManager;
+import net.tbnr.dev.particle.ParticleEffectManager;
 import net.tbnr.dev.setting.SettingListener;
 import net.tbnr.dev.setting.PlayerSettingsManager;
 import net.tbnr.dev.signs.ServerSignMatrixManager;
@@ -19,6 +20,7 @@ import net.tbnr.dev.signs.SignSetupCommand;
 import net.tbnr.dev.spawn.SetSpawnCommand;
 import net.tbnr.dev.spawn.SpawnCommand;
 import net.tbnr.dev.spawn.SpawnManager;
+import net.tbnr.dev.wardrobe.WardrobeListener;
 import org.bukkit.Bukkit;
 
 @ModuleMeta(description = "TBNR's Hub Plugin!", name = "TBNRHub")
@@ -30,6 +32,7 @@ public final class TBNRHub extends ModularPlugin {
     @Getter private WarpMongoRepository warpRepository;
     @Getter private ServerSignMatrixManager matrixManager;
     @Getter private SpawnManager spawnManager;
+    @Getter private ParticleEffectManager particleEffectManager;
 
     @Override
     protected void onModuleEnable() throws Exception {
@@ -54,7 +57,9 @@ public final class TBNRHub extends ModularPlugin {
         PlayerGate.enable();
         HeightTracker.enable();
         SettingListener.enable();
-        RainbowEffectListener.enable();
+        this.particleEffectManager = new ParticleEffectManager();
+        registerListener(particleEffectManager);
+        registerListener(new WardrobeListener());
         Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(10), 144000);
         Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(5), 150000);
         Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(3), 152400);

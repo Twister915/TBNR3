@@ -35,7 +35,7 @@ public enum PlayerSetting {
             }
         }
     }, "Adds a jump and speed boost."),
-    RAINBOW_PARTICLE_EFFECT("particle_effect", "Rainbow Particle Effect", "hub.perk.particle", false, "Makes rainbow particles", "follow you as you walk.");
+    PARTICLE_EFFECT("particle_effect", "Particle Effect", "hub.perk.particle", false, "Makes beautiful particles", "follow you as you walk.");
 
     final String settingKey;
     final String name;

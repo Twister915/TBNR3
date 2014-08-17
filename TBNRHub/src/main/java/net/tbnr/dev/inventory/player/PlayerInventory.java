@@ -8,7 +8,6 @@ import net.cogzmc.core.modular.command.EmptyHandlerException;
 import net.cogzmc.core.network.NetworkServer;
 import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.core.player.CooldownUnexpiredException;
-import net.cogzmc.hub.Hub;
 import net.tbnr.dev.ServerHelper;
 import net.tbnr.dev.TBNRHub;
 import net.tbnr.dev.ControlledInventory;
@@ -16,9 +15,11 @@ import net.tbnr.dev.ControlledInventoryButton;
 import net.tbnr.dev.setting.PlayerSetting;
 import net.tbnr.dev.setting.SettingChangeEvent;
 import net.tbnr.dev.signs.ServerSignMatrix;
+import net.tbnr.dev.wardrobe.WardrobeInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
@@ -31,7 +32,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public final class PlayerInventory extends ControlledInventory implements Listener {
-    private final static PlayerSetting[] perks = new PlayerSetting[]{PlayerSetting.FLY_IN_HUB, PlayerSetting.RAINBOW_PARTICLE_EFFECT};
+    private final static PlayerSetting[] perks = new PlayerSetting[]{PlayerSetting.FLY_IN_HUB};
 
     public PlayerInventory() {
         Bukkit.getPluginManager().registerEvents(this, TBNRHub.getInstance());
@@ -74,10 +75,10 @@ public final class PlayerInventory extends ControlledInventory implements Listen
     }
 
     private InventoryGraphicalInterface getPerkMenuFor(CPlayer player) {
-        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.DARK_GRAY + "Perk Menu - Perks Coming Soon");
-        for (PlayerSetting perk : perks) {
-            graphicalInterface.addButton(new PerkButton(perk, player, graphicalInterface));
-        }
+        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.DARK_GRAY + "Perk Menu");
+        graphicalInterface.addButton(new PerkButton(PlayerSetting.FLY_IN_HUB, player, graphicalInterface), 0);
+        graphicalInterface.addButton(new ParticleButton(player), 4);
+        graphicalInterface.addButton(new WardrobeButton(player), 8);
         graphicalInterface.updateInventory();
         return graphicalInterface;
     }
@@ -115,6 +116,7 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                 return new ToggleItem(PlayerSetting.PLAYERS);
             case 0:
                 //Toggle jump boost
+                if (Core.getNetworkManager() == null) return null;
                 return new ControlledInventoryButton() {
                     @Override
                     protected ItemStack getStack(CPlayer player) {
@@ -192,6 +194,60 @@ public final class PlayerInventory extends ControlledInventory implements Listen
             }
             if (Core.getNetworkManager().getThisServer().equals(server)) return;
             else server.sendPlayerToServer(player);
+        }
+    }
+
+    private class WardrobeButton extends InventoryButton {
+        public WardrobeButton(CPlayer player) {
+            super(new ItemStack(Material.LEATHER_HELMET));
+            ItemStack stack = getStack();
+            ItemMeta itemMeta = stack.getItemMeta();
+            itemMeta.setDisplayName(ChatColor.GREEN + "Wardrobe!");
+            if (!canUse(player)) {
+                itemMeta.setLore(Arrays.asList("", ChatColor.RED + "Donate for access to this!"));
+            }
+            stack.setItemMeta(itemMeta);
+        }
+
+        private boolean canUse(CPlayer player) {
+            return player.hasPermission("hub.wardrobe");
+        }
+
+        @Override
+        protected void onPlayerClick(CPlayer player, ClickAction action) throws EmptyHandlerException {
+            if (!canUse(player)) {
+                player.playSoundForPlayer(Sound.CAT_HISS);
+                return;
+            }
+            WardrobeInventory wardrobeInventory = new WardrobeInventory(player);
+            wardrobeInventory.open(player);
+            player.playSoundForPlayer(Sound.CHEST_OPEN);
+        }
+    }
+
+    private class ParticleButton extends InventoryButton {
+        public ParticleButton(CPlayer player) {
+            super(new ItemStack(Material.FIREWORK));
+            ItemStack stack = getStack();
+            ItemMeta itemMeta = stack.getItemMeta();
+            itemMeta.setDisplayName(ChatColor.GREEN + ChatColor.BOLD.toString() + "Particle Packs!");
+            if (!canUse(player)) {
+                itemMeta.setLore(Arrays.asList("", ChatColor.RED + "Donate for access to this!"));
+            }
+            stack.setItemMeta(itemMeta);
+        }
+
+        @Override
+        protected void onPlayerClick(CPlayer player, ClickAction action) throws EmptyHandlerException {
+            if (!canUse(player)) {
+                player.playSoundForPlayer(Sound.CAT_HISS);
+                return;
+            }
+            TBNRHub.getInstance().getParticleEffectManager().getPackChooser(player).open(player);
+        }
+
+        private boolean canUse(CPlayer player) {
+            return player.hasPermission(PlayerSetting.PARTICLE_EFFECT.getPermission());
         }
     }
 
