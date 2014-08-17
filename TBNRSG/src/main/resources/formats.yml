@@ -1,4 +1,5 @@
 prefix: "&8»&2TBNR&8« "
+enderbar-login: "&2You're on &2&l<server>&2!"
 pre-game-countdown: "&2The games will begin in &8[&a<seconds>&8] &2second&8(&2s&8)."
 gameplay-time: "&2Deathmatch will begin in &a<time>&8."
 death: "&2A cannon could be heard &a<blocks> &2blocks away."

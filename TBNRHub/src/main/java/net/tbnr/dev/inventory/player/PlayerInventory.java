@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public final class PlayerInventory extends ControlledInventory implements Listener {
-    private final static PlayerSetting[] perks = new PlayerSetting[]{PlayerSetting.FLY_IN_HUB};
+    private final static PlayerSetting[] perks = new PlayerSetting[]{PlayerSetting.FLY_IN_HUB, PlayerSetting.RAINBOW_PARTICLE_EFFECT};
 
     public PlayerInventory() {
         Bukkit.getPluginManager().registerEvents(this, TBNRHub.getInstance());

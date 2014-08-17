@@ -854,8 +854,38 @@ public final class SGGame implements Listener {
                 player.getBukkitPlayer().teleport(tribute.getBukkitPlayer().getLocation().add(0, 4, 0));
                 player.playSoundForPlayer(Sound.ENDERMAN_TELEPORT);
             } else {
-                player.sendMessage(plugin.getFormat("coming-soon"));
+                player.sendMessage(SurvivalGames.getInstance().getFormat("coming-soon"));
             }
+        }
+    }
+
+    private class SponsorButton extends InventoryButton {
+
+        private final CPlayer target;
+        private final CPlayer sponsor;
+        private final ItemStack type;
+        private final Long price;
+
+        public SponsorButton(CPlayer target, CPlayer sponsor, ItemStack type, Long price) {
+            super(null);
+            this.target = target;
+            this.sponsor = sponsor;
+            this.type = type;
+            this.price = price;
+            ItemStack button = new ItemStack(type);
+            ItemMeta itemMeta = button.getItemMeta();
+            itemMeta.setDisplayName(ChatColor.GREEN.toString() + ChatColor.ITALIC + "Click to sponsor " + target.getName());
+            List<String> lore = new ArrayList<>();
+            lore.add("This item costs: " + price);
+            lore.add("");
+            lore.add("You have " + getPointsFor(sponsor) + " points");
+            itemMeta.setLore(lore);
+            //TODO Colour formatting and other stuff.
+        }
+
+        @Override
+        protected void onPlayerClick(CPlayer player, ClickAction action) throws EmptyHandlerException {
+            this.sponsor.sendMessage("You have sponsored that kid");
         }
     }
 
