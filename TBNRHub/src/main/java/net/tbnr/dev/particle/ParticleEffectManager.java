@@ -51,7 +51,7 @@ public final class ParticleEffectManager implements Listener {
 
     public boolean setParticlePack(CPlayer player, ParticlePack pack) {
         particlePacks.remove(player);
-        if (!player.hasPermission(pack.permission)) return false;
+        if (!player.hasPermission(pack.permission) && !player.hasPermission("hub.particle.all")) return false;
         particlePacks.put(player, pack);
         player.storeSettingValue("particle_pack", pack.name());
         return true;

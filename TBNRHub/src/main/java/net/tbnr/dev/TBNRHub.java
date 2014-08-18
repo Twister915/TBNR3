@@ -20,6 +20,7 @@ import net.tbnr.dev.signs.SignSetupCommand;
 import net.tbnr.dev.spawn.SetSpawnCommand;
 import net.tbnr.dev.spawn.SpawnCommand;
 import net.tbnr.dev.spawn.SpawnManager;
+import net.tbnr.dev.util.SecurityListener;
 import net.tbnr.dev.wardrobe.WardrobeListener;
 import org.bukkit.Bukkit;
 
@@ -60,6 +61,7 @@ public final class TBNRHub extends ModularPlugin {
         this.particleEffectManager = new ParticleEffectManager();
         registerListener(particleEffectManager);
         registerListener(new WardrobeListener());
+        registerListener(new SecurityListener());
         Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(10), 144000);
         Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(5), 150000);
         Bukkit.getScheduler().runTaskLater(this, new AutoRestart.AutoRestartWarning(3), 152400);

@@ -2,6 +2,7 @@ package net.tbnr.dev;
 
 import lombok.Data;
 import net.cogzmc.core.Core;
+import net.cogzmc.core.network.NetworkServer;
 import net.cogzmc.core.player.CPlayer;
 import org.bukkit.Bukkit;
 
@@ -10,7 +11,12 @@ public final class AutoRestart implements Runnable {
     public void run() {
         for (CPlayer cPlayer : Core.getOnlinePlayers()) {
             cPlayer.sendMessage(TBNRHub.getInstance().getFormat("restart-transfer"));
-            ServerHelper.getLobbyServer(false).sendPlayerToServer(cPlayer);
+            NetworkServer lobbyServer;
+            int tries = 0;
+            do {
+                lobbyServer = ServerHelper.getLobbyServer(false);
+                tries++;
+            } while (lobbyServer.equals(Core.getNetworkManager().getThisServer()) && tries < 10);
         }
         Bukkit.getScheduler().runTaskLater(TBNRHub.getInstance(), new Runnable() {
             @Override

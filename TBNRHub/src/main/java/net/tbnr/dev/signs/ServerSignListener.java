@@ -23,7 +23,9 @@ public final class ServerSignListener implements Listener {
             if (!serverSignMatrix.getRegion().isWithin(of)) continue;
             CPlayer onlinePlayer = Core.getOnlinePlayer(event.getPlayer());
             try {
-                serverSignMatrix.getSignAt(of).onClick(onlinePlayer);
+                ServerSign signAt = serverSignMatrix.getSignAt(of);
+                if (signAt == null) continue;
+                signAt.onClick(onlinePlayer);
             } catch (IllegalStateException e) {
                 onlinePlayer.playSoundForPlayer(Sound.NOTE_PLING, 1f, 0.8f);
                 onlinePlayer.sendMessage(TBNRHub.getInstance().getFormat("sign-join-deny", new String[]{"<error>", e.getMessage()}));
