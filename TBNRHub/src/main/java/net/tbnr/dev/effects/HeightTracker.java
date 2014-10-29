@@ -1,14 +1,7 @@
 package net.tbnr.dev.effects;
 
 import net.cogzmc.core.Core;
-import net.cogzmc.core.player.CPlayer;
-import net.cogzmc.hub.model.SettingsManager;
 import net.tbnr.dev.TBNRHub;
-import net.tbnr.dev.inventory.SettingUtils;
-import net.tbnr.dev.setting.PlayerSetting;
-import net.tbnr.dev.setting.PlayerSettingsManager;
-import net.tbnr.dev.setting.SettingChangeException;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

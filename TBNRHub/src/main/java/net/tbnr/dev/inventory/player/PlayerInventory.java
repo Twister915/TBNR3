@@ -1,6 +1,8 @@
 package net.tbnr.dev.inventory.player;
 
 import net.cogzmc.core.Core;
+import net.cogzmc.core.effect.inventory.ControlledInventory;
+import net.cogzmc.core.effect.inventory.ControlledInventoryButton;
 import net.cogzmc.core.effect.npc.ClickAction;
 import net.cogzmc.core.gui.InventoryButton;
 import net.cogzmc.core.gui.InventoryGraphicalInterface;
@@ -10,8 +12,6 @@ import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.core.player.CooldownUnexpiredException;
 import net.tbnr.dev.ServerHelper;
 import net.tbnr.dev.TBNRHub;
-import net.tbnr.dev.ControlledInventory;
-import net.tbnr.dev.ControlledInventoryButton;
 import net.tbnr.dev.setting.PlayerSetting;
 import net.tbnr.dev.setting.SettingChangeEvent;
 import net.tbnr.dev.signs.ServerSignMatrix;
@@ -32,8 +32,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public final class PlayerInventory extends ControlledInventory implements Listener {
-    private final static PlayerSetting[] perks = new PlayerSetting[]{PlayerSetting.FLY_IN_HUB};
-
     public PlayerInventory() {
         Bukkit.getPluginManager().registerEvents(this, TBNRHub.getInstance());
     }
@@ -66,7 +64,7 @@ public final class PlayerInventory extends ControlledInventory implements Listen
     }
 
     private InventoryGraphicalInterface getNewWarpMenu() {
-        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.GRAY + ChatColor.BOLD.toString() + "Warp Star");
+        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.GRAY + ChatColor.BOLD.toString() + "WARP STAR");
         for (Warp warp : TBNRHub.getInstance().getWarpRepository()) {
             graphicalInterface.addButton(new WarpStarButton(warp), warp.getPosition());
         }
@@ -74,8 +72,8 @@ public final class PlayerInventory extends ControlledInventory implements Listen
         return graphicalInterface;
     }
 
-    private InventoryGraphicalInterface getPerkMenuFor(CPlayer player) {
-        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.DARK_GRAY + "Perk Menu");
+    public InventoryGraphicalInterface getPerkMenuFor(CPlayer player) {
+        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, ChatColor.GRAY + ChatColor.BOLD.toString() + "PERK MENU");
         graphicalInterface.addButton(new PerkButton(PlayerSetting.FLY_IN_HUB, player, graphicalInterface), 0);
         graphicalInterface.addButton(new ParticleButton(player), 4);
         graphicalInterface.addButton(new WardrobeButton(player), 8);
@@ -98,7 +96,7 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                     protected ItemStack getStack(CPlayer player) {
                         ItemStack stack = new ItemStack(Material.NETHER_STAR);
                         ItemMeta itemMeta = stack.getItemMeta();
-                        itemMeta.setDisplayName(ChatColor.GRAY  + ChatColor.BOLD.toString() + "Warp Star");
+                        itemMeta.setDisplayName(ChatColor.GRAY  + ChatColor.BOLD.toString() + "WARP STAR");
                         stack.setItemMeta(itemMeta);
                         return stack;
                     }
@@ -120,12 +118,9 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                 return new ControlledInventoryButton() {
                     @Override
                     protected ItemStack getStack(CPlayer player) {
-                        ItemStack itemStack = new ItemStack(Material.WOOL);
-                        itemStack.setDurability((short)3);
+                        ItemStack itemStack = new ItemStack(Material.MAP);
                         ItemMeta itemMeta = itemStack.getItemMeta();
-                        NetworkServer thisServer = Core.getNetworkManager().getThisServer();
-                        Integer serverNumber = ServerSignMatrix.getServerNumber(thisServer);
-                        itemMeta.setDisplayName(ChatColor.GRAY + ChatColor.BOLD.toString() + "Lobby Selector " + ChatColor.GREEN + "- " + ChatColor.GRAY + ChatColor.BOLD.toString() + "Lobby #" + serverNumber);
+                        itemMeta.setDisplayName(ChatColor.GRAY + ChatColor.BOLD.toString() + "LOBBY SELECTOR");
                         itemStack.setItemMeta(itemMeta);
                         return itemStack;
                     }
@@ -142,7 +137,7 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                     protected ItemStack getStack(CPlayer player) {
                         ItemStack stack = new ItemStack(Material.CHEST);
                         ItemMeta itemMeta = stack.getItemMeta();
-                        itemMeta.setDisplayName(ChatColor.GRAY + ChatColor.BOLD.toString() + "Perk Menu");
+                        itemMeta.setDisplayName(ChatColor.GRAY + ChatColor.BOLD.toString() + "PERK MENU");
                         stack.setItemMeta(itemMeta);
                         return stack;
                     }
@@ -159,7 +154,7 @@ public final class PlayerInventory extends ControlledInventory implements Listen
                     protected ItemStack getStack(CPlayer player) {
                         ItemStack itemStack = new ItemStack(Material.ARROW);
                         ItemMeta itemMeta = itemStack.getItemMeta();
-                        itemMeta.setDisplayName(ChatColor.GRAY + ChatColor.BOLD.toString() + "Return to Spawn");
+                        itemMeta.setDisplayName(ChatColor.GRAY + ChatColor.BOLD.toString() + "RETURN TO SPAWN");
                         itemStack.setItemMeta(itemMeta);
                         return itemStack;
                     }
@@ -174,14 +169,14 @@ public final class PlayerInventory extends ControlledInventory implements Listen
     }
 
     public InventoryGraphicalInterface getNewLobbyChooser() {
-        return new InventoryGraphicalInterface(9, "Lobbies");
+        return new InventoryGraphicalInterface(9, ChatColor.GREEN + ChatColor.BOLD.toString() + "LOBBIES");
     }
 
     private class LobbyButton extends InventoryButton {
         private final NetworkServer server;
 
         private LobbyButton(NetworkServer server) {
-            super(stackFor(server));
+            super(stackForServer(server));
             this.server = server;
         }
 
@@ -192,8 +187,7 @@ public final class PlayerInventory extends ControlledInventory implements Listen
             } catch (CooldownUnexpiredException e) {
                 return;
             }
-            if (Core.getNetworkManager().getThisServer().equals(server)) return;
-            else server.sendPlayerToServer(player);
+            if (!Core.getNetworkManager().getThisServer().equals(server)) server.sendPlayerToServer(player);
         }
     }
 
@@ -202,7 +196,7 @@ public final class PlayerInventory extends ControlledInventory implements Listen
             super(new ItemStack(Material.LEATHER_HELMET));
             ItemStack stack = getStack();
             ItemMeta itemMeta = stack.getItemMeta();
-            itemMeta.setDisplayName(ChatColor.GREEN + "Wardrobe!");
+            itemMeta.setDisplayName(ChatColor.GREEN + ChatColor.BOLD.toString() + "WARDROBE");
             if (!canUse(player)) {
                 itemMeta.setLore(Arrays.asList("", ChatColor.RED + "Donate for access to this!"));
             }
@@ -230,9 +224,9 @@ public final class PlayerInventory extends ControlledInventory implements Listen
             super(new ItemStack(Material.FIREWORK));
             ItemStack stack = getStack();
             ItemMeta itemMeta = stack.getItemMeta();
-            itemMeta.setDisplayName(ChatColor.GREEN + ChatColor.BOLD.toString() + "Particle Packs!");
+            itemMeta.setDisplayName(ChatColor.GREEN + ChatColor.BOLD.toString() + "PARTICLE PACKS");
             if (!canUse(player)) {
-                itemMeta.setLore(Arrays.asList("", ChatColor.RED + "Donate for access to this!"));
+                itemMeta.setLore(Arrays.asList("", ChatColor.RED + "Donate for access to this!", ChatColor.RED + "http://tbnr.net/shop"));
             }
             stack.setItemMeta(itemMeta);
         }
@@ -251,15 +245,15 @@ public final class PlayerInventory extends ControlledInventory implements Listen
         }
     }
 
-    private static ItemStack stackFor(NetworkServer server) {
+    private static ItemStack stackForServer(NetworkServer server) {
         byte data;
         boolean isThisServer = server.equals(Core.getNetworkManager().getThisServer());
         if (isThisServer) data = 4;
         else data = 5;
         ItemStack stack = new ItemStack(Material.STAINED_GLASS);
         ItemMeta itemMeta = stack.getItemMeta();
-        itemMeta.setDisplayName(ChatColor.GREEN + (isThisServer ? ChatColor.BOLD.toString() : "") + "Lobby #" + ServerSignMatrix.getServerNumber(server));
-        itemMeta.setLore(Arrays.asList(ChatColor.GREEN + (isThisServer ? "You are on this server" : "Click to connect!"), ChatColor.GREEN + "There are " + ChatColor.RED + server.getOnlineCount() + ChatColor.GREEN + " on this server."));
+        itemMeta.setDisplayName(ChatColor.GREEN + ChatColor.BOLD.toString() + "Lobby #" + ServerSignMatrix.getServerNumber(server));
+        itemMeta.setLore(Arrays.asList( (isThisServer ? ChatColor.GOLD + "You are on this server" : ChatColor.GREEN + "Click to connect!"), "", ChatColor.GREEN + "There are " + ChatColor.RED + server.getOnlineCount() + ChatColor.GREEN + " players on this server."));
         stack.setItemMeta(itemMeta);
         stack.setDurability(data);
         return stack;

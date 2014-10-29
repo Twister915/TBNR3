@@ -4,9 +4,9 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import net.cogzmc.core.effect.inventory.ControlledInventoryButton;
 import net.cogzmc.core.player.CPlayer;
 import net.tbnr.dev.TBNRHub;
-import net.tbnr.dev.ControlledInventoryButton;
 import net.tbnr.dev.inventory.SettingUtils;
 import net.tbnr.dev.setting.PlayerSetting;
 import net.tbnr.dev.setting.PlayerSettingsManager;
@@ -32,7 +32,6 @@ public class ToggleItem extends ControlledInventoryButton {
                 (ChatColor.GREEN.toString() + ChatColor.BOLD + "ON") :
                 (ChatColor.RED.toString() + ChatColor.BOLD + "OFF"))
                 + " " + ChatColor.GRAY + setting.getName());
-        itemMeta.setLore(setting.getDescription());
         itemStack.setItemMeta(itemMeta);
         return itemStack;
     }

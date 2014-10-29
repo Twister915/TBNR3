@@ -62,9 +62,9 @@ public final class ParticleEffectManager implements Listener {
     }
 
     public InventoryGraphicalInterface getPackChooser(CPlayer player) {
-        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(18, "Particle Packs");
+        InventoryGraphicalInterface graphicalInterface = new InventoryGraphicalInterface(9, "Particle Packs");
         graphicalInterface.addButton(new PerkButton(PlayerSetting.PARTICLE_EFFECT, player, graphicalInterface), 0);
-        int x = 2;
+        int x = 1;
         for (ParticlePack particlePack : ParticlePack.values()) {
             graphicalInterface.addButton(new ParticlePackButton(particlePack, player, graphicalInterface), x);
             x++;
@@ -124,7 +124,7 @@ public final class ParticleEffectManager implements Listener {
             ItemStack stack = getStack();
             ItemMeta itemMeta = stack.getItemMeta();
             itemMeta.setDisplayName((b ? ChatColor.GREEN : ChatColor.RED) + ChatColor.BOLD.toString() + pack.name);
-            itemMeta.setLore(Arrays.asList("", b ? ChatColor.GREEN + ChatColor.BOLD.toString() + "You have this pack enabled!" : !player.hasPermission(pack.permission) ? ChatColor.RED + "You do not have permission for this!" : ChatColor.GREEN + ChatColor.BOLD.toString() + "Click to enable!"));
+            itemMeta.setLore(Arrays.asList("", b ? ChatColor.GREEN + ChatColor.BOLD.toString() + "You have this pack enabled!" : !player.hasPermission(pack.permission) && !player.hasPermission("hub.particle.all") ? ChatColor.RED + "You do not have permission for this!" : ChatColor.GREEN + ChatColor.BOLD.toString() + "Click to enable!"));
             stack.setItemMeta(itemMeta);
         }
 

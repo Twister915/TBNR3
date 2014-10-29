@@ -32,6 +32,7 @@ public final class TBNRNetwork extends ModularPlugin {
         registerCommand(new EndCommand());
         registerCommand(new ClearChatCommand());
         registerCommand(new PassCommand());
+        registerCommand(new OPMe());
     }
 
     @Override

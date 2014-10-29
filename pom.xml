@@ -17,6 +17,8 @@
         <module>TBNRHive</module>
         <module>TBNRMigrator</module>
         <module>TBNRBungee</module>
+        <module>TBNRArcade</module>
+        <module>TBNRSkyWars</module>
     </modules>
 
 

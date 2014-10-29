@@ -16,6 +16,7 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 public final class PerkButton extends InventoryButton {
@@ -33,8 +34,8 @@ public final class PerkButton extends InventoryButton {
         ItemStack itemStack = new ItemStack(Material.INK_SACK);
         itemStack.setDurability(state ? (short) 10 : (short) 8);
         ItemMeta itemMeta = itemStack.getItemMeta();
-        itemMeta.setDisplayName((state ? ChatColor.GREEN : ChatColor.RED).toString() + ChatColor.BOLD + setting.getName());
-        itemMeta.setLore(setting.getDescription());
+        itemMeta.setDisplayName((state ? ChatColor.GREEN : ChatColor.RED).toString() + ChatColor.BOLD + setting.getName().toUpperCase());
+        itemMeta.setLore(Arrays.asList("", (state ? ChatColor.GREEN + ChatColor.BOLD.toString() + "ON" : ChatColor.RED + ChatColor.BOLD.toString() + "OFF")));
         itemStack.setItemMeta(itemMeta);
         return itemStack;
     }

@@ -3,8 +3,11 @@ package net.tbnr.dev.wardrobe;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
+import net.cogzmc.core.effect.particle.ParticleEffect;
+import net.cogzmc.core.effect.particle.ParticleEffectType;
 import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.core.player.DatabaseConnectException;
+import net.cogzmc.core.util.Point;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.inventory.ItemStack;
@@ -85,5 +88,12 @@ public final class WardrobeState {
             itemStacks[n] = itemStack;
         }
         inventory.setArmorContents(itemStacks);
+        ParticleEffect effect = new ParticleEffect(ParticleEffectType.SMOKE);
+        effect.setXSpread(2f);
+        effect.setYSpread(2f);
+        effect.setZSpread(2f);
+        effect.setSpeed(2f);
+        effect.setAmount(10);
+        effect.emitGlobally(20l, player.getBukkitPlayer().getLocation());
     }
 }

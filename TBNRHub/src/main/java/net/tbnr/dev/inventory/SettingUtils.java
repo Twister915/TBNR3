@@ -2,6 +2,7 @@ package net.tbnr.dev.inventory;
 
 import com.google.api.client.repackaged.com.google.common.base.Joiner;
 import net.cogzmc.core.player.CPlayer;
+import net.cogzmc.core.player.message.FClickActionType;
 import net.cogzmc.core.player.message.FHoverActionType;
 import net.cogzmc.core.player.message.FancyMessage;
 import net.tbnr.dev.TBNRHub;
@@ -20,7 +21,7 @@ public class SettingUtils {
         String name = builder.toString();
         FancyMessage.start(">>").bold().color(ChatColor.GREEN).done()
                 .addMore(" " + (stateFor ? "ON" : "OFF")).color((stateFor ? ChatColor.GREEN : ChatColor.RED)).bold().done()
-                .addMore(" " + name).withHoverAction(FHoverActionType.SHOW_TEXT, Joiner.on("\n").join(setting.getDescription())).color(ChatColor.GRAY).done()
+                .addMore(" " + name).withHoverAction(FHoverActionType.SHOW_TEXT, Joiner.on("\n").join(setting.getDescription())).withClickAction(FClickActionType.RUN_COMMAND, "/togglesetting " + setting.name()).color(ChatColor.GRAY).bold().done()
                 .complete().sendTo(player);
     }
 

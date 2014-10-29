@@ -25,33 +25,34 @@ public final class ServerSign implements JoinAttemptHandler.JoinAttemptDelegate 
 
     public void onClick(CPlayer player) throws IllegalStateException {
         if (currentlyDisplaying == null) return;
+        player.sendMessage(TBNRHub.getInstance().getFormat("connecting", new String[]{"<server>", getAbreviationFor(matrix.getGame()) + ServerSignMatrix.getServerNumber(currentlyDisplaying)}));
         currentlyDisplaying.sendPlayerToServer(player);
     }
 
     public void update(NetworkServer server) {
         Sign sign = getSign();
         if (server == null) {
-            sign.setLine(0, $("&4░░░░░░░░░░░"));
-            sign.setLine(1, $("&aTBNR"));
-            sign.setLine(2, $("&aNo Server..."));
-            sign.setLine(3, $("&4░░░░░░░░░░░"));
+            sign.setLine(0, $("&7[&aTBNR&7]"));
+            sign.setLine(1, "");
+            sign.setLine(2, $("&4This server"));
+            sign.setLine(3, $("&4is offline!"));
             sign.update(true);
             return;
         }
         String status = ServerHelper.getStatus(server);
         SignState aFor = SignState.getFor(status);
         if (status == null || aFor == SignState.Restarting) ServerHelper.requestStatus(server);
-        sign.setLine(1, getAbreviationFor(matrix.getGame()) + ServerSignMatrix.getServerNumber(server));
+        sign.setLine(0, ChatColor.GRAY + "[" + ChatColor.DARK_GREEN + getAbreviationFor(matrix.getGame()) + ServerSignMatrix.getServerNumber(server) + ChatColor.GRAY + "]");
         if (aFor == SignState.Restarting) {
-            sign.setLine(0, $("&4░░░░░░░░░░░"));
+            sign.setLine(0, $("&7[&aTBNR&7]"));
             sign.setLine(1, "");
-            sign.setLine(2, $("&2»RESTARTING«"));
-            sign.setLine(3, $("&4░░░░░░░░░░░"));
+            sign.setLine(2, $("&4This server is"));
+            sign.setLine(3, $("&4offline!"));
             sign.update(true);
             return;
         }
-        sign.setLine(0, ChatColor.GREEN + (aFor == SignState.Lobby && server.getOnlineCount() < matrix.getGame().getMaxPlayers() ? ChatColor.BOLD.toString() : "") + "»Join«");
-        sign.setLine(2, aFor.name().replaceAll("_", " "));
+        sign.setLine(1, (server.getOnlineCount() < matrix.getGame().getMaxPlayers() ? ChatColor.GREEN + ChatColor.BOLD.toString() + "Not Full" : ChatColor.RED + ChatColor.BOLD.toString() + "Full"));
+        sign.setLine(2, (aFor == SignState.In_Game ? ChatColor.DARK_RED : ChatColor.DARK_GREEN) + ChatColor.BOLD.toString() + aFor.name().replaceAll("_", " "));
         sign.setLine(3, $("&2" + server.getOnlineCount() + "/" + matrix.getGame().getMaxPlayers()));
         sign.update(true);
         currentlyDisplaying = server;

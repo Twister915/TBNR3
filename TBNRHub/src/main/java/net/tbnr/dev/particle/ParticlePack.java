@@ -8,7 +8,9 @@ public enum ParticlePack {
     GREEN("Glowing Green", "hub.particle.green",  ParticleEffectType.HAPPY_VILLAGER),
     TRAIL_OF_LOVE("Trail of Love", "hub.particle.love", ParticleEffectType.HEART, ParticleEffectType.SPELL),
     SMOKE_TRAIL("Smoke Trail", "hub.particle.smoke", ParticleEffectType.SMOKE, ParticleEffectType.LARGE_SMOKE),
-    CLOUD_9("Cloud 9", "hub.particle.cloud", ParticleEffectType.CLOUD, ParticleEffectType.SNOWBALL_POOF);
+    CLOUD_9("Cloud 9", "hub.particle.cloud", ParticleEffectType.CLOUD, ParticleEffectType.SNOWBALL_POOF),
+    FIRE("Sizzling Hot", "hub.particle.lava", ParticleEffectType.LAVA, ParticleEffectType.DRIPLAVA, ParticleEffectType.SMOKE),
+    ENDER_EYE("Ender", "hub.particle.ender",  ParticleEffectType.PORTAL, ParticleEffectType.SUSPENDED);
 
     final String permission;
     final String name;

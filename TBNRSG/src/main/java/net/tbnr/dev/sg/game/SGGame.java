@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NonNull;
 import net.cogzmc.core.Core;
+import net.cogzmc.core.effect.inventory.ControlledInventory;
+import net.cogzmc.core.effect.inventory.ControlledInventoryButton;
 import net.cogzmc.core.effect.npc.ClickAction;
 import net.cogzmc.core.gui.InventoryButton;
 import net.cogzmc.core.gui.InventoryGraphicalInterface;
@@ -184,7 +186,7 @@ public final class SGGame implements Listener {
         }
         //Kick the players who couldn't fit on the cornicopia.
         while (cornIterator.hasNext()) {
-            cornIterator.next().getBukkitPlayer().kickPlayer(ChatColor.RED + "We couldn't make room for you on this map :(");
+            cornIterator.next().kickPlayer(ChatColor.RED + "We couldn't make room for you on this map :(");
             cornIterator.remove();
         }
         //setup chests
@@ -250,7 +252,7 @@ public final class SGGame implements Listener {
                     iterator1.next().getBukkitPlayer().teleport(next.getLocation(world));
                 }
                 while (iterator1.hasNext()) {
-                    iterator1.next().getBukkitPlayer().kickPlayer(ChatColor.RED + "Your game has ended, there is not enough room for you on the cornicopia!");
+                    iterator1.next().kickPlayer(ChatColor.RED + "Your game has ended, there is not enough room for you on the cornicopia!");
                 }
                 ensureHiddenAndShown();
                 break;

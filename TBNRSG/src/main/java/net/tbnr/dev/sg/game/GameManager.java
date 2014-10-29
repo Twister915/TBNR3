@@ -160,7 +160,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
                             ServerHelper.getLobbyServer(cPlayer.getSettingValue("vip_server", Boolean.class, false) && cPlayer.hasPermission("tbnr.vip"))
                                     .sendPlayerToServer(cPlayer);
                         } catch (Exception e) {
-                            cPlayer.getBukkitPlayer().kickPlayer("Unable to send you back to the lobby! Please reconnect!");
+                            cPlayer.kickPlayer("Unable to send you back to the lobby! Please reconnect!");
                         }
                     }
                 }
@@ -185,7 +185,7 @@ public final class GameManager implements Listener, CPlayerConnectionListener, N
                     Bukkit.getScheduler().runTaskLater(SurvivalGames.getInstance(), new Runnable() {
                         @Override
                         public void run() {
-                            if (playerWithLowerPriority.isOnline()) player.getBukkitPlayer().kickPlayer(SurvivalGames.getInstance().getFormat("priority-kicked-donate"));
+                            if (playerWithLowerPriority.isOnline()) player.kickPlayer(SurvivalGames.getInstance().getFormat("priority-kicked-donate"));
                         }
                     }, 40L);
                     return;

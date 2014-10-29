@@ -6,6 +6,7 @@ import net.cogzmc.core.gui.InventoryButton;
 import net.cogzmc.core.gui.InventoryGraphicalInterface;
 import net.cogzmc.core.modular.command.EmptyHandlerException;
 import net.cogzmc.core.player.CPlayer;
+import net.tbnr.dev.TBNRHub;
 import org.bukkit.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -17,9 +18,10 @@ import java.util.*;
 public final class WardrobeInventory extends InventoryGraphicalInterface {
     private final static Integer[] saveSlots = {9, 10, 18, 19, 27, 28};
     private final static Integer[] resetSlots = {16, 17, 25, 26, 34, 35};
-    private final static Integer colorStart = 46;
+    private final static Integer colorStart = 45;
     private final static Integer armorStart = 12;
     private final static Integer visibilitySlot = 4;
+    private final static Integer size = 54;
 
     private final CPlayer player;
     private ArmorPiece active = ArmorPiece.HAT;
@@ -32,10 +34,11 @@ public final class WardrobeInventory extends InventoryGraphicalInterface {
     private boolean showingArmor;
 
     public WardrobeInventory(CPlayer player) {
-        super(54, ChatColor.GRAY + "Wardrobe");
+        super(size, ChatColor.GRAY + "Wardrobe");
         this.player = player;
         readFromDatabase();
         ArmorPiece[] armors = ArmorPiece.values();
+        addButton(new ReturnButton(), 0);
         for (ArmorPiece armorPiece : armors) {
             activityButtons.put(armorPiece, new ActiveIndicatorButton(armorPiece));
             armorButtons.put(armorPiece, new ArmorButton(armorPiece));
@@ -143,13 +146,15 @@ public final class WardrobeInventory extends InventoryGraphicalInterface {
     }
 
     private enum ColorChooser {
+        WHITE(DyeColor.WHITE, 0, "White", ChatColor.WHITE),
         RED(DyeColor.RED, 14, "Red", ChatColor.RED),
         ORANGE(DyeColor.ORANGE, 1, "Orange", ChatColor.GOLD),
         YELLOW(DyeColor.YELLOW, 4, "Yellow", ChatColor.YELLOW),
         GREEN(DyeColor.GREEN, 5, "Green", ChatColor.GREEN),
         BLUE(DyeColor.BLUE, 3, "Blue", ChatColor.DARK_AQUA),
         INDIGO(DyeColor.MAGENTA, 2, "Indigo", ChatColor.LIGHT_PURPLE),
-        VIOLET(DyeColor.PURPLE, 10, "Violet", ChatColor.DARK_PURPLE);
+        VIOLET(DyeColor.PURPLE, 10, "Violet", ChatColor.DARK_PURPLE),
+        BLACK(DyeColor.BLACK, 15, "Black", ChatColor.DARK_GRAY);
 
         private final DyeColor dyeColor;
         private final short dataValue;
@@ -167,7 +172,7 @@ public final class WardrobeInventory extends InventoryGraphicalInterface {
     private class BlankButton extends InventoryButton {
         public BlankButton() {
             super(null);
-            ItemStack itemStack = new ItemStack(Material.STAINED_GLASS_PANE, 1, (short) 0);
+            ItemStack itemStack = new ItemStack(Material.STAINED_GLASS_PANE, 1, (short) 7);
             ItemMeta itemMeta = itemStack.getItemMeta();
             itemMeta.setDisplayName(" ");
             itemStack.setItemMeta(itemMeta);
@@ -194,8 +199,8 @@ public final class WardrobeInventory extends InventoryGraphicalInterface {
             boolean currentlyActive = active == representing;
             stack.setDurability((short) (currentlyActive ? 10 : 8));
             ItemMeta itemMeta = stack.getItemMeta();
-            if (currentlyActive) itemMeta.setDisplayName(ChatColor.GREEN + ChatColor.BOLD.toString() + "You are currently editing your " + representing.humanName.toLowerCase() + "!");
-            else itemMeta.setDisplayName(ChatColor.GREEN + ChatColor.BOLD.toString() + "Click to start editing your " + representing.humanName.toLowerCase() + "!");
+            if (currentlyActive) itemMeta.setDisplayName(ChatColor.GREEN + ChatColor.BOLD.toString() + "Editing your " + representing.humanName.toLowerCase() + "!");
+            else itemMeta.setDisplayName(ChatColor.GREEN + ChatColor.BOLD.toString() + "Click to edit your " + representing.humanName.toLowerCase() + "!");
             List<String> lore = new ArrayList<>();
             lore.add("");
             lore.add((colors.get(representing) == null) ? ChatColor.RED + "You have not set a color for this!" : ChatColor.GREEN + "The color you have set for this is #" + Integer.toHexString(colors.get(representing).asRGB()).toUpperCase());
@@ -336,7 +341,7 @@ public final class WardrobeInventory extends InventoryGraphicalInterface {
         private void updateStack() {
             ItemStack itemStack = new ItemStack(showingArmor ? Material.EYE_OF_ENDER : Material.ENDER_PEARL);
             ItemMeta itemMeta = itemStack.getItemMeta();
-            itemMeta.setDisplayName((showingArmor ? ChatColor.GREEN : ChatColor.RED) + (showingArmor ? "Showing Armor" : "Hiding Armor"));
+            itemMeta.setDisplayName((showingArmor ? ChatColor.GREEN : ChatColor.RED) + ChatColor.BOLD.toString() + (showingArmor ? "Showing Armor" : "Hiding Armor"));
             itemStack.setItemMeta(itemMeta);
             setStack(itemStack);
         }
@@ -348,6 +353,24 @@ public final class WardrobeInventory extends InventoryGraphicalInterface {
             markForUpdate(this);
             updateInventory();
             player.playSoundForPlayer(Sound.CHICKEN_EGG_POP);
+        }
+    }
+
+    private class ReturnButton extends InventoryButton {
+        public ReturnButton() {
+            super(new ItemStack(Material.CHEST));
+            ItemMeta itemMeta = getStack().getItemMeta();
+            itemMeta.setDisplayName(ChatColor.GREEN + ChatColor.BOLD.toString() + "Return to Perk Menu");
+            getStack().setItemMeta(itemMeta);
+        }
+
+        @Override
+        protected void onPlayerClick(CPlayer player, ClickAction action) throws EmptyHandlerException {
+            writeToDatabase();
+            ignoreClose = true;
+            player.playSoundForPlayer(Sound.CHICKEN_EGG_POP);
+            player.getBukkitPlayer().closeInventory();
+            TBNRHub.getInstance().getPlayerInventory().getPerkMenuFor(player).open(player);
         }
     }
 }

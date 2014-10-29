@@ -47,3 +47,6 @@ restart-transfer: "&cYou are being transfered to a new lobby because the lobby y
 connecting: "&aAttempting to connect to <server>"
 parkour-no-teleport: "&cI can't teleport you to a level you haven't completed!"
 no-permission: "&cYou do not have permission for this!"
+current-server: "&2&lCURRENTLY ON&8: &7&lLOBBY <number>"
+donation-ender-bar: "&a&k;&2&l <name> HAS PURCHASED &r<package>&2&l! &a&k;"
+donate-prompt: "&2Be like <name>, get yourself rank today at &3http://tbnr.net/shop"

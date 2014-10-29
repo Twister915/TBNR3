@@ -3,12 +3,12 @@ package net.tbnr.dev.parkour;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import net.cogzmc.core.Core;
 import net.cogzmc.core.player.CPlayer;
 import net.cogzmc.core.player.DatabaseConnectException;
 import net.cogzmc.core.util.Point;
 import net.cogzmc.core.util.TimeUtils;
 import net.tbnr.dev.TBNRHub;
+import net.tbnr.dev.enderBar.EnderBarManager;
 import net.tbnr.dev.inventory.SettingUtils;
 import net.tbnr.dev.setting.PlayerSetting;
 import net.tbnr.dev.setting.PlayerSettingsManager;
@@ -28,6 +28,8 @@ import java.util.*;
 @EqualsAndHashCode
 @ToString
 public final class ParkourSession implements Listener {
+    private static final Integer PARKOUR_PRIORITY = 3;
+
     @Getter private final CPlayer player;
     @Getter private final World world;
     @Getter private final Parkour parkour;
@@ -243,7 +245,7 @@ public final class ParkourSession implements Listener {
         private int secondsPassed = 0;
 
         public TimerRunnable schedule() {
-            Core.getEnderBarManager().showBarFor(player);
+            EnderBarManager.clearId(player, PARKOUR_PRIORITY);
             runTaskTimer(TBNRHub.getInstance(), 0L, 20L);
             return this;
         }
@@ -256,17 +258,17 @@ public final class ParkourSession implements Listener {
                 cancel();
                 return;
             }
-            Core.getEnderBarManager().setHealthPercentageFor(player, (float)i/(float)level.getTargetDuration().getStandardSeconds());
             String color = (i <= 5 ? ChatColor.RED : ChatColor.DARK_GREEN).toString();
-            Core.getEnderBarManager().setTextFor(player,
-                    color + ">>" + ChatColor.GREEN + " Challenge Time: Level " + levelNumber + " " + color + "<<");
+            float percentage = (float)i/(float)level.getTargetDuration().getStandardSeconds();
+            String msg = color + ">>" + ChatColor.GREEN + " Challenge Time: Level " + levelNumber + " " + color + "<<";
+            EnderBarManager.setStateForID(player, PARKOUR_PRIORITY, msg, percentage);
             secondsPassed++;
         }
 
         @Override
         public synchronized void cancel() throws IllegalStateException {
             super.cancel();
-            Core.getEnderBarManager().hideBarFor(player);
+            EnderBarManager.clearId(player, PARKOUR_PRIORITY);
         }
     }
 }

@@ -1,9 +1,8 @@
 package net.tbnr.dev.sg.game;
 
-import net.cogzmc.core.Core;
+import net.cogzmc.core.effect.inventory.ControlledInventory;
+import net.cogzmc.core.effect.inventory.ControlledInventoryButton;
 import net.cogzmc.core.player.CPlayer;
-import net.tbnr.dev.ControlledInventory;
-import net.tbnr.dev.ControlledInventoryButton;
 import net.tbnr.dev.sg.SurvivalGames;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
